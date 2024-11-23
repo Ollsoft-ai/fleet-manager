@@ -373,7 +373,7 @@ function updateMap(data) {
                 map.removeLayer(currentMarkers.get(markerId));
                 currentMarkers.delete(markerId);
             }
-            
+
             // Remove line and destination marker
             if (currentLines.has(lineId)) {
                 const lineObjects = currentLines.get(lineId);
@@ -384,6 +384,7 @@ function updateMap(data) {
         }
     });
 
+    // Identify busy vehicles
     const busyVehicleIds = new Set();
     data.vehicles.forEach(vehicle => {
         data.customers.forEach(customer => {
@@ -395,16 +396,47 @@ function updateMap(data) {
         });
     });
 
-
-    // Update vehicles with realtime positions
+    // Update vehicles
     data.vehicles.forEach(vehicle => {
         let lat = vehicle.coordX;
         let lng = vehicle.coordY;
-    
+
         const [boundedLat, boundedLng] = getPosition(lat, lng);
         const isOccupied = busyVehicleIds.has(vehicle.id);
-        console.log(`Vehicle ${vehicle.id} bounded position:`, [boundedLat, boundedLng]);
-    
+
+        // Handle assignment line
+        const assignmentLineId = `assignment-${vehicle.id}`;
+        if (vehicle.customerId && !isOccupied) {
+            const assignedCustomer = data.customers.find(c => c.id === vehicle.customerId);
+            if (assignedCustomer && assignedCustomer.awaitingService) {
+                const [customerLat, customerLng] = getPosition(assignedCustomer.coordX, assignedCustomer.coordY);
+                
+                if (!currentLines.has(assignmentLineId)) {
+                    const assignmentLine = L.polyline(
+                        [[boundedLat, boundedLng], [customerLat, customerLng]],
+                        {
+                            color: '#4CAF50',
+                            weight: 2,
+                            opacity: 0.8,
+                            dashArray: '5, 10'
+                        }
+                    ).addTo(map);
+                    currentLines.set(assignmentLineId, { line: assignmentLine });
+                } else {
+                    currentLines.get(assignmentLineId).line.setLatLngs([
+                        [boundedLat, boundedLng],
+                        [customerLat, customerLng]
+                    ]);
+                }
+            }
+        } else {
+            if (currentLines.has(assignmentLineId)) {
+                map.removeLayer(currentLines.get(assignmentLineId).line);
+                currentLines.delete(assignmentLineId);
+            }
+        }
+
+        // Handle vehicle marker
         const markerId = `vehicle-${vehicle.id}`;
         if (!currentMarkers.has(markerId)) {
             const vehicleMarker = L.marker([boundedLat, boundedLng], {
@@ -422,7 +454,7 @@ function updateMap(data) {
                     className: 'custom-marker'
                 })
             }).addTo(map);
-    
+
             vehicleMarker.bindPopup(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
@@ -435,7 +467,7 @@ function updateMap(data) {
                     </span>
                 </div>
             `);
-    
+
             currentMarkers.set(markerId, vehicleMarker);
         } else {
             const marker = currentMarkers.get(markerId);
@@ -470,13 +502,9 @@ function updateMap(data) {
                 </div>
             `);
         }
-        //TODO: ADD GREEN LINE FROM CAR TO CUSTOMER
     });
-    
 }
 
-
-    
 function updateStats(data) {
     if (!data) return;
 

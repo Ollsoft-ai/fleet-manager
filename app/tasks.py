@@ -68,16 +68,21 @@ def find_closest_customer(vehicle, customers, assigned_customers=None):
     
     return closest_customer
 
-def get_vehicle_customer_assignments(vehicles, customers):
+def get_vehicle_customer_assignments(vehicles, customers, current_assignments):
     """
     Match only free vehicles to their closest available customers.
     Returns a list of (vehicle, customer) pairs.
     """
     assignments = []
-    assigned_customers = set()
+    assigned_customers = set(current_assignments.values())  # Track currently assigned customers
     
     # Only consider vehicles that are truly available (not currently serving)
-    available_vehicles = [v for v in vehicles if v["isAvailable"] and v["customerId"] is None]
+    available_vehicles = [
+        v for v in vehicles 
+        if v["isAvailable"] 
+        and v["customerId"] is None 
+        and v["id"] not in current_assignments
+    ]
     
     # For each available vehicle, find closest customer
     while available_vehicles:
@@ -132,14 +137,26 @@ def run_scenario_controller(self, scenario_id):
         'realtime_positions': {}
     }
     redis_client.set(f"scenario_metadata:{scenario_id}", json.dumps(metadata))
+    
+    # Track current vehicle-customer assignments
+    current_assignments = {}  # vehicle_id -> customer_id
 
     while True:
         current_scenario_state = get_scenario_state(scenario_id)
         
+        # Update current assignments based on scenario state
+        for vehicle in current_scenario_state["vehicles"]:
+            vehicle_id = vehicle["id"]
+            if vehicle["customerId"] is None:
+                current_assignments.pop(vehicle_id, None)
+            else:
+                current_assignments[vehicle_id] = vehicle["customerId"]
+        
         # Get assignments only for truly available vehicles
         assignments = get_vehicle_customer_assignments(
             current_scenario_state["vehicles"],
-            current_scenario_state["customers"]
+            current_scenario_state["customers"],
+            current_assignments
         )
         
         if not assignments and all(not c["awaitingService"] for c in current_scenario_state["customers"]):
@@ -150,6 +167,8 @@ def run_scenario_controller(self, scenario_id):
         for vehicle, customer in assignments:
             update_vehicle_assignment(scenario_id, vehicle["id"], customer["id"])
             update_scenario_metadata(scenario_id, vehicle["id"])
+            # Update our tracking of assignments
+            current_assignments[vehicle["id"]] = customer["id"]
             print(f"Assigned customer {customer['id']} to vehicle {vehicle['id']}")
             
         time.sleep(0.005)
