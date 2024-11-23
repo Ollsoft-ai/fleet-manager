@@ -1,0 +1,124 @@
+<nav class="fleet-sidebar">
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="T-Mobile Logo">
+        <div class="logo-text">
+            <span class="company">Fleet manager</span>
+            <span class="system-status">
+                <span class="status-dot active"></span>
+                Online
+            </span>
+        </div>
+    </div>
+
+    <div class="fleet-stats">
+        <div class="stat-card">
+            <div class="stat-header">Fleet Status</div>
+            <div class="stat-content">
+                <div class="stat-value">124</div>
+                <div class="stat-label">Active Vehicles</div>
+                <div class="stat-trend positive">98% Efficiency</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="menu-section">
+        <div class="section-header">
+            <span class="section-title">Command Center</span>
+            <span class="live-pill">Live</span>
+        </div>
+        <ul class="menu-items">
+            <li class="menu-item">
+                <a href="{{ url_for('main.index') }}" class="menu-link {% if request.endpoint == 'main.map' %}active{% endif %}">
+                    <i class="menu-icon fas fa-map-location-dot"></i>
+                    <span>Fleet Map</span>
+                    <div class="status-indicator online"></div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{ url_for('main.map') }}" class="menu-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+                    <i class="menu-icon fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="menu-icon fas fa-leaf"></i>
+                    <span>Environmental Impact</span>
+                    <div class="eco-badge">+12%</div>
+                </a>
+            </li>
+          
+        </ul>
+    </div>
+
+    <div class="menu-section">
+        <div class="section-header">
+            <span class="section-title">Fleet Control</span>
+        </div>
+        <ul class="menu-items">
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="menu-icon fas fa-car"></i>
+                    <span>Vehicles</span>
+                    <div class="status-pill">All Operational</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="menu-icon fas fa-charging-station"></i>
+                    <span>Charging Network</span>
+                    <div class="power-pill">92% Available</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="menu-icon fas fa-wrench"></i>
+                    <span>Maintenance</span>
+                    <div class="alert-pill">2 Scheduled</div>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="menu-section">
+        <div class="section-header">
+            <span class="section-title">System</span>
+        </div>
+        <ul class="menu-items">
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="menu-icon fas fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="menu-icon fas fa-bell"></i>
+                    <span>Alerts</span>
+                    <div class="notification-badge">3</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link">
+                    <i class="menu-icon fas fa-shield"></i>
+                    <span>Security</span>
+                    <div class="security-pill">Protected</div>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="system-info">
+            <div class="info-item">
+                <span class="info-label">Network Status</span>
+                <span class="network-status">
+                    <span class="network-dot active"></span>
+                    <span class="network-dot active"></span>
+                    <span class="network-dot active"></span>
+                </span>
+            </div>
+            <div class="info-item">Last Update: 2 min ago</div>
+        </div>
+    </div>
+</nav>

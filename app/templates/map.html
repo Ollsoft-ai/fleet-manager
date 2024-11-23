@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'sidebar.html' %}
+
+<div class="main-content">
+    <div id="map"></div>
+    
+    <!-- Overlay Elements -->
+    <div class="map-overlays">
+        <!-- Title Overlay -->
+        <div class="title-overlay">
+            <h1 class="dashboard-title">Fleet Command Center</h1>
+            <div class="dashboard-subtitle">Real-Time Monitoring System</div>
+        </div>
+
+        <!-- Stats Overlay -->
+        <div class="stats-overlay">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-satellite"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">98.7%</div>
+                    <div class="stat-label">System Uptime</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-signal"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">124/125</div>
+                    <div class="stat-label">Connected Units</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">Live</div>
+                    <div class="stat-label">Last Update: 2s ago</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenario Controls Overlay -->
+        <div class="controls-overlay">
+            <div class="scenario-controls">
+                <select class="scenario-select">
+                    <option value="863eb000-ba17-406d-8252-4829ecdd8a86">Default Scenario</option>
+                </select>
+                <button class="run-scenario">
+                    <i class="fas fa-play"></i>
+                    Run Scenario
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+    .custom-marker i {
+        font-size: 14px;
+        color: white;
+    }
+    .legend {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        font-family: 'Inter', sans-serif;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .legend h4 {
+        font-weight: 500;
+        font-size: 14px;
+        margin-bottom: 12px;
+        color: #1a1a1a;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 8px 0;
+        font-size: 12px;
+        color: #4a5568;
+    }
+    .legend i {
+        margin-right: 8px;
+        width: 20px;
+        text-align: center;
+    }
+
+    :root {
+        --sidebar-width: 280px;
+    }
+    
+    #map {
+        width: 100% !important;
+        height: 100vh !important;
+    }
+
+    .custom-marker {
+        transition: all 0.3s ease;
+    }
+</style>
+
+<script>
+    // Constants
+const MUNICH_CENTER = [48.137154, 11.576124]; // [lat, lng]
+const MUNICH_BOUNDS = {
+    lat: { min: 48.0, max: 48.25 },
+    lng: { min: 11.36, max: 11.79 }
+};
+
+const MAX_BOUNDS = [
+    [MUNICH_BOUNDS.lat.min, MUNICH_BOUNDS.lng.min],
+    [MUNICH_BOUNDS.lat.max, MUNICH_BOUNDS.lng.max]
+];
+
+// Initialize map
+const map = L.map('map', {
+    center: MUNICH_CENTER,
+    zoom: 12,
+    maxBounds: MAX_BOUNDS,
+    minZoom: 11,
+    zoomControl: false
+});
+
+// Add map tiles
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '©OpenStreetMap, ©CartoDB',
+    subdomains: 'abcd'
+}).addTo(map);
+
+// Add zoom control
+L.control.zoom({
+    position: 'bottomright'
+}).addTo(map);
+
+// Global variables
+let currentScenarioId = '3790cde4-0fa6-4fdf-a8da-decbabfaa570';
+let simulationRunning = false;
+let updateInterval;
+let lastUpdateTime = Date.now();
+let currentMarkers = new Map();
+
+function updateLastUpdateTime() {
+    const timeDiff = Math.round((Date.now() - lastUpdateTime) / 1000);
+    const timeElement = document.querySelector('.stats-overlay .stat-item:last-child .stat-value');
+    if (timeElement) {
+        timeElement.textContent = timeDiff < 60 ? `${timeDiff}s ago` : 'Live';
+    }
+}
+
+function getPosition(coordX, coordY) {
+    // Handle null or undefined coordinates
+    if (coordX == null || coordY == null) {
+        console.warn('Null coordinates received:', { coordX, coordY });
+        return MUNICH_CENTER; // Return default position
+    }
+
+    const lat = Number(coordX);
+    const lng = Number(coordY);
+
+    // Check if coordinates are valid numbers
+    if (isNaN(lat) || isNaN(lng)) {
+        console.warn('Invalid coordinates received:', { coordX, coordY });
+        return MUNICH_CENTER;
+    }
+
+    // Ensure coordinates stay within bounds
+    const boundedLat = Math.max(MUNICH_BOUNDS.lat.min, Math.min(MUNICH_BOUNDS.lat.max, lat));
+    const boundedLng = Math.max(MUNICH_BOUNDS.lng.min, Math.min(MUNICH_BOUNDS.lng.max, lng));
+
+    return [boundedLat, boundedLng];
+}
+
+function updateMap(data) {
+    console.log('Updating map with new data:', data);
+
+    if (!data?.vehicles || !data?.customers) {
+        console.error('Invalid data structure:', data);
+        return;
+    }
+
+    // Update customers
+    data.customers.forEach(customer => {
+        if (customer.awaitingService) {
+            const [lat, lng] = getPosition(customer.coordX, customer.coordY);
+            console.log(`Customer ${customer.id} position:`, [lat, lng]);
+
+            const markerId = `customer-${customer.id}`;
+            if (!currentMarkers.has(markerId)) {
+                const customerMarker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        html: `<div style="
+                            background-color: #FFC107;
+                            width: 30px;
+                            height: 30px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+                        "><i class="fas fa-user"></i></div>`,
+                        className: 'custom-marker'
+                    })
+                }).addTo(map);
+
+                customerMarker.bindPopup(`
+                    <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
+                        <strong style="color: #1a1a1a;">Customer ${customer.id}</strong><br>
+                        <span style="color: #FFC107;">Waiting for pickup</span><br>
+                        <span style="color: #666;">Position: [${lat.toFixed(6)}, ${lng.toFixed(6)}]</span>
+                    </div>
+                `);
+
+                currentMarkers.set(markerId, customerMarker);
+            } else {
+                currentMarkers.get(markerId).setLatLng([lat, lng]);
+            }
+        } else {
+            const markerId = `customer-${customer.id}`;
+            if (currentMarkers.has(markerId)) {
+                map.removeLayer(currentMarkers.get(markerId));
+                currentMarkers.delete(markerId);
+            }
+        }
+    });
+
+    // Update vehicles
+    data.vehicles.forEach(vehicle => {
+        const [lat, lng] = getPosition(vehicle.coordX, vehicle.coordY);
+        console.log(`Vehicle ${vehicle.id} position:`, [lat, lng]);
+
+        const markerId = `vehicle-${vehicle.id}`;
+        if (!currentMarkers.has(markerId)) {
+            const vehicleMarker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    html: `<div style="
+                        background-color: ${vehicle.isAvailable ? '#4CAF50' : '#00BCD4'};
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 0 20px rgba(0,0,0,0.2);
+                    "><i class="fas fa-car-side"></i></div>`,
+                    className: 'custom-marker'
+                })
+            }).addTo(map);
+
+            vehicleMarker.bindPopup(`
+                <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
+                    <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
+                    <span style="color: ${vehicle.isAvailable ? '#4CAF50' : '#00BCD4'};">
+                        ${vehicle.isAvailable ? 'Available' : 'On trip with customer'}
+                    </span><br>
+                    <span style="color: #4a5568;">
+                        ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
+                        Position: [${lat.toFixed(6)}, ${lng.toFixed(6)}]
+                    </span>
+                </div>
+            `);
+
+            currentMarkers.set(markerId, vehicleMarker);
+        } else {
+            currentMarkers.get(markerId).setLatLng([lat, lng]);
+        }
+    });
+}
+
+function updateStats(data) {
+    try {
+        const totalUnits = data.vehicles.length;
+        const availableUnits = data.vehicles.filter(v => v.isAvailable).length;
+        
+        console.log('Updating stats:', { totalUnits, availableUnits });
+        
+        document.querySelector('.stats-overlay .stat-item:nth-child(2) .stat-value').textContent = 
+            `${availableUnits}/${totalUnits}`;
+
+        const uptime = 100;
+        document.querySelector('.stats-overlay .stat-item:first-child .stat-value').textContent = 
+            `${uptime.toFixed(1)}%`;
+    } catch (error) {
+        console.error('Error updating stats:', error);
+    }
+}
+
+async function getScenarioState() {
+    try {
+        console.log('Fetching scenario state for ID:', currentScenarioId);
+        const response = await fetch(`/scenario/${currentScenarioId}`);
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch scenario state: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Full API Response:', JSON.stringify(data, null, 2));
+
+        if (!data || !data.vehicles || !data.customers) {
+            console.error('Invalid data structure received:', data);
+            return null;
+        }
+
+        const hasValidCoordinates = data.vehicles.some(v => v.coordX !== 0 || v.coordY !== 0) &&
+                                  data.customers.some(c => c.coordX !== 0 || c.coordY !== 0);
+        
+        if (!hasValidCoordinates) {
+            console.warn('Warning: All coordinates are zero. This might be incorrect data.');
+        }
+
+        lastUpdateTime = Date.now();
+        updateLastUpdateTime();
+        return data;
+    } catch (error) {
+        console.error('Error fetching scenario state:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
+        return null;
+    }
+}
+
+function startUpdates() {
+    console.log('Starting periodic updates');
+    updateInterval = setInterval(async () => {
+        console.log('Fetching update...');
+        const state = await getScenarioState();
+        if (state) {
+            updateMap(state);
+            updateStats(state);
+        }
+    }, 1000);
+}
+
+function stopUpdates() {
+    console.log('Stopping updates');
+    if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+    }
+}
+
+function updateUI(running) {
+    const runButton = document.querySelector('.run-scenario');
+    if (running) {
+        runButton.innerHTML = `<i class="fas fa-stop"></i> Stop Scenario`;
+        runButton.classList.add('running');
+    } else {
+        runButton.innerHTML = `<i class="fas fa-play"></i> Run Scenario`;
+        runButton.classList.remove('running');
+    }
+}
+
+async function startScenario() {
+    try {
+        console.log('Starting scenario:', currentScenarioId);
+        
+        // First check the current state
+        const currentState = await getScenarioState();
+        
+        if (!currentState) {
+            throw new Error('Could not fetch scenario state');
+        }
+
+        console.log('Current scenario status:', currentState.status);
+
+        if (currentState.status === 'RUNNING') {
+            console.log('Scenario is already running, just starting updates');
+            simulationRunning = true;
+            startUpdates();
+            updateUI(true);
+            return;
+        }
+
+        // Only try to initialize if not already running
+        const response = await fetch(`/run/${currentScenarioId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('Start scenario response:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response body:', errorText);
+            
+            // If the scenario is already running, continue anyway
+            if (response.status === 400 && currentState.status === 'RUNNING') {
+                console.log('Scenario appears to be running despite 400 error, continuing...');
+                simulationRunning = true;
+                startUpdates();
+                updateUI(true);
+                return;
+            }
+            
+            throw new Error(`Failed to start scenario: ${response.status}`);
+        }
+        
+        simulationRunning = true;
+        startUpdates();
+        updateUI(true);
+    } catch (error) {
+        console.error('Error starting scenario:', error);
+        updateUI(false);
+    }
+}
+
+async function stopScenario() {
+    console.log('Stopping scenario');
+    stopUpdates();
+    updateUI(false);
+    simulationRunning = false;
+}
+
+// Initialize event listeners
+// Modify the initial state check in the DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing event listeners');
+    
+    const runButton = document.querySelector('.run-scenario');
+    if (!runButton) {
+        console.error('Run button not found in DOM');
+        return;
+    }
+    
+    runButton.disabled = false;
+    
+    runButton.addEventListener('click', async function() {
+        console.log('Run button clicked. Current simulation state:', simulationRunning);
+        if (!simulationRunning) {
+            await startScenario();
+        } else {
+            await stopScenario();
+        }
+    });
+
+    // Initial state check
+    getScenarioState().then(state => {
+        if (state) {
+            console.log('Initial state received:', state);
+            updateMap(state);
+            updateStats(state);
+            
+            // Update UI based on current state
+            if (state.status === 'RUNNING') {
+                console.log('Scenario is already running, but updates not started');
+                // Don't auto-start updates, but show correct button state
+                simulationRunning = false;
+                updateUI(false);
+            }
+        }
+    }).catch(error => {
+        console.error('Error getting initial state:', error);
+    });
+});
+
+
+// Add the legend
+const legend = L.control({ position: 'bottomleft' });
+legend.onAdd = function(map) {
+    const div = L.DomUtil.create('div', 'legend');
+    div.innerHTML = `
+        <h4>Fleet Status</h4>
+        <div class="legend-item">
+            <i class="fas fa-user" style="color: #FFC107;"></i>
+            <span>Waiting Customer</span>
+        </div>
+        <div class="legend-item">
+            <i class="fas fa-car-side" style="color: #4CAF50;"></i>
+            <span>Available Vehicle</span>
+        </div>
+        <div class="legend-item">
+            <i class="fas fa-car-side" style="color: #00BCD4;"></i>
+            <span>Vehicle with Customer</span>
+        </div>
+    `;
+    return div;
+};
+legend.addTo(map);
+</script>
+{% endblock %}
