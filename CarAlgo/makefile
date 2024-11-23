@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -std=c++11 -Wall
 LDFLAGS = -luuid
 
-SOURCES = main.cpp Customer.cpp TreeNode.cpp CustomerGenerator.cpp TreeGenerator.cpp
+SOURCES = main.cpp Customer.cpp TreeNode.cpp CustomerGenerator.cpp TreeGenerator.cpp Algorithm.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 EXECUTABLE = program
 
