@@ -384,28 +384,33 @@ function updateMap(data) {
         }
     });
 
+    const busyVehicleIds = new Set();
+    data.vehicles.forEach(vehicle => {
+        data.customers.forEach(customer => {
+            if (!customer.awaitingService && // customer is not waiting (being transported)
+                vehicle.coordX === customer.coordX && 
+                vehicle.coordY === customer.coordY) {
+                busyVehicleIds.add(vehicle.id);
+            }
+        });
+    });
+
+
     // Update vehicles with realtime positions
     data.vehicles.forEach(vehicle => {
         let lat = vehicle.coordX;
         let lng = vehicle.coordY;
-
-        // Use realtime position if available
-        /*if (data.metadata?.realtime_positions?.[vehicle.id]) {
-            const realtimePos = data.metadata.realtime_positions[vehicle.id];
-            lat = realtimePos.x;
-            lng = realtimePos.y;
-            console.log(`Using realtime position for vehicle ${vehicle.id}:`, [lat, lng]);
-        }*/
-
+    
         const [boundedLat, boundedLng] = getPosition(lat, lng);
+        const isOccupied = busyVehicleIds.has(vehicle.id);
         console.log(`Vehicle ${vehicle.id} bounded position:`, [boundedLat, boundedLng]);
-
+    
         const markerId = `vehicle-${vehicle.id}`;
         if (!currentMarkers.has(markerId)) {
             const vehicleMarker = L.marker([boundedLat, boundedLng], {
                 icon: L.divIcon({
                     html: `<div style="
-                        background-color: ${vehicle.isAvailable ? '#4CAF50' : '#00BCD4'};
+                        background-color: ${isOccupied ? '#00BCD4' : '#4CAF50'};
                         width: 36px;
                         height: 36px;
                         border-radius: 50%;
@@ -417,12 +422,12 @@ function updateMap(data) {
                     className: 'custom-marker'
                 })
             }).addTo(map);
-
+    
             vehicleMarker.bindPopup(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
-                    <span style="color: ${vehicle.isAvailable ? '#4CAF50' : '#00BCD4'};">
-                        ${vehicle.isAvailable ? 'Available' : 'On trip with customer'}
+                    <span style="color: ${isOccupied ? '#00BCD4' : '#4CAF50'};">
+                        ${isOccupied ? 'On trip with customer' : 'Available'}
                     </span><br>
                     <span style="color: #4a5568;">
                         ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
@@ -430,14 +435,48 @@ function updateMap(data) {
                     </span>
                 </div>
             `);
-
+    
             currentMarkers.set(markerId, vehicleMarker);
         } else {
-            currentMarkers.get(markerId).setLatLng([boundedLat, boundedLng]);
+            const marker = currentMarkers.get(markerId);
+            marker.setLatLng([boundedLat, boundedLng]);
+            
+            // Update the icon when status changes
+            marker.setIcon(L.divIcon({
+                html: `<div style="
+                    background-color: ${isOccupied ? '#00BCD4' : '#4CAF50'};
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+                "><i class="fas fa-car-side"></i></div>`,
+                className: 'custom-marker'
+            }));
+    
+            // Update the popup content
+            marker.getPopup().setContent(`
+                <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
+                    <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
+                    <span style="color: ${isOccupied ? '#00BCD4' : '#4CAF50'};">
+                        ${isOccupied ? 'On trip with customer' : 'Available'}
+                    </span><br>
+                    <span style="color: #4a5568;">
+                        ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
+                        Position: [${lat.toFixed(6)}, ${lng.toFixed(6)}]
+                    </span>
+                </div>
+            `);
         }
+        //TODO: ADD GREEN LINE FROM CAR TO CUSTOMER
     });
+    
 }
 
+
+    
 function updateStats(data) {
     if (!data) return;
 
