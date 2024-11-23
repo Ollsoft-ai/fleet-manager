@@ -18,11 +18,13 @@
         "total_distance_travelled": 5549.358232592284,
         "total_distance_without_customer": 0,
         "total_distance_with_customer": 5549.358232592284,
-        "total_travel_time": 584.0,
         "average_customer_wait_time": 0,
         "realtime_kpis": {
             "completion_rate": 0.0, //customers served / total customers !
             "fuel_saved": 0, // (non_optimal travel distance - optimal travel distance) * fuel consumption ! 
+            "total_travel_time": 584.0, // !
+            "total_travel_distance": 5549.358232592284, // !
+            "average_number_of_trips_per_vehicle": 1.0, // ! total number of trips / number of vehicles
             "number_of_waiting_customers": 0,
             "number_of_available_vehicles": 1,
             "number_of_taken_vehicles": 0,
