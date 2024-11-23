@@ -9,7 +9,7 @@ from redis import Redis
 
 BASE_URL_RUNNER = "http://scenariorunner:8090"
 BASE_URL_BACKEND = "http://backend:8080"
-SIMULATION_SPEED = 0.001
+SIMULATION_SPEED = 0.005
 
 # Add this to store active scenario tasks
 active_scenarios = {}
@@ -30,6 +30,17 @@ def scenarios():
     )
     if response.status_code != 200:
         return {"error": f"Failed to get scenarios: Status {response.status_code}"}, response.status_code
+    return response.json()
+
+@main.route("/scenario_template/<scenario_id>", methods=['GET'])
+def scenario_template(scenario_id):
+    headers = {'Content-Type': 'application/json'}
+    response = requests.get(
+        f"{BASE_URL_BACKEND}/scenarios/{scenario_id}",
+        headers=headers
+    )
+    if response.status_code != 200:
+        return {"error": f"Failed to get scenario template: Status {response.status_code}"}, response.status_code
     return response.json()
 
 @main.route('/run/<scenario_id>', methods=['POST']) # second you run the scenario
@@ -93,34 +104,13 @@ def scenario(scenario_id):
     
     current_scenario_state = response.json()
 
-    # Get metadata from Redis
+    # Get metadata from Redis and decode it properly
     metadata = redis_client.get(f"scenario_metadata:{scenario_id}")
     if metadata:
-        metadata = json.loads(metadata)
-        # Calculate interpolated positions for vehicles
-        current_time = datetime.now()
-        for vehicle_id, vehicle_data in metadata['vehicle_assignments'].items():
-            start_time = datetime.fromisoformat(vehicle_data['start_time'])
-            time_diff = (current_time - start_time).total_seconds()
-            initial_time = vehicle_data['initial_travel_time']
-            
-            if initial_time > 0:
-                progress = min(1.0, time_diff / initial_time)
-                
-                # Linear interpolation of position
-                start_pos = vehicle_data['start_position']
-                target_pos = vehicle_data['target_position']
-                
-                interpolated_x = start_pos['x'] + (target_pos['x'] - start_pos['x']) * progress
-                interpolated_y = start_pos['y'] + (target_pos['y'] - start_pos['y']) * progress
-                
-                metadata['realtime_positions'][vehicle_id] = {
-                    'x': interpolated_x,
-                    'y': interpolated_y,
-                    'progress': progress
-                }
-        
-        current_scenario_state['metadata'] = metadata
+        # Decode bytes to string and parse JSON
+        current_scenario_state['metadata'] = json.loads(metadata.decode('utf-8'))
+    else:
+        current_scenario_state['metadata'] = None
 
     return current_scenario_state
 
@@ -129,6 +119,19 @@ def scenario(scenario_id):
 def map():
     return render_template('map.html')
 
+
+@main.route('/analytics')
+def analytics(): 
+    return render_template('analytics.html')
+
+
+@main.route('/environment')
+def environment():
+    return render_template('environment.html')
+
+@main.route('/vehicles')
+def vehicles(): 
+    return render_template('vehicles.html')
 #@main.app_context_processor
 #def inject_conf_var():
 #    return dict(

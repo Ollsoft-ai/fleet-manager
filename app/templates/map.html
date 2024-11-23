@@ -60,6 +60,21 @@
     </div>
 </div>
 
+
+<!-- SIMULATION COMPLETED POPUP -->
+<div id="simulationEndDialog" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-icon">
+            <i class="fas fa-moon"></i>
+        </div>
+        <h2>End of Day</h2>
+        <p>All fleet operations have been completed for today. Your vehicles have served the city well!</p>
+        <button onclick="closeSimulationEndDialog()" class="modal-close-btn">
+            <i class="fas fa-check"></i> Close
+        </button>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <style>
     .custom-marker i {
@@ -94,7 +109,6 @@
     }
 
     :root {
-        --sidebar-width: 280px;
     }
     
     #map {
@@ -105,10 +119,77 @@
     .custom-marker {
         transition: all 0.3s ease;
     }
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        max-width: 400px;
+        animation: modalFadeIn 0.3s ease-out;
+    }
+    
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    .modal-icon {
+        font-size: 40px;
+        color: #4a90e2;
+        margin-bottom: 20px;
+    }
+    
+    .modal-content h2 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 24px;
+    }
+    
+    .modal-content p {
+        color: #666;
+        margin-bottom: 25px;
+        line-height: 1.5;
+    }
+    
+    .modal-close-btn {
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+    
+    .modal-close-btn:hover {
+        background-color: #357abd;
+    }
 </style>
 
 <script>
-    // Constants
+// Constants
 const MUNICH_CENTER = [48.137154, 11.576124]; // [lat, lng]
 const MUNICH_BOUNDS = {
     lat: { min: 48.0, max: 48.25 },
@@ -145,6 +226,7 @@ let simulationRunning = false;
 let updateInterval;
 let lastUpdateTime = Date.now();
 let currentMarkers = new Map();
+let currentLines = new Map();
 
 function updateLastUpdateTime() {
     const timeDiff = Math.round((Date.now() - lastUpdateTime) / 1000);
@@ -152,6 +234,18 @@ function updateLastUpdateTime() {
     if (timeElement) {
         timeElement.textContent = timeDiff < 60 ? `${timeDiff}s ago` : 'Live';
     }
+}
+
+function showSimulationEndDialog() {
+    document.getElementById('simulationEndDialog').style.display ='flex';
+    simulationRunning = false;
+    currentScenarioId = null; 
+    updateUI(false);
+    stopUpdates();
+}
+
+function closeSimulationEndDialog() {
+    document.getElementById('simulationEndDialog').style.display = 'none';
 }
 
 function getPosition(coordX, coordY) { //smazat
@@ -177,7 +271,7 @@ function getPosition(coordX, coordY) { //smazat
     return [boundedLat, boundedLng];
 }
 
-function updateMap(data) { //predelat
+function updateMap(data) {
     console.log('Updating map with new data:', data);
 
     if (!data?.vehicles || !data?.customers) {
@@ -187,11 +281,63 @@ function updateMap(data) { //predelat
 
     // Update customers
     data.customers.forEach(customer => {
+        const markerId = `customer-${customer.id}`;
+        const lineId = `line-${customer.id}`;
+
         if (customer.awaitingService) {
             const [lat, lng] = getPosition(customer.coordX, customer.coordY);
+            const [destLat, destLng] = getPosition(customer.destinationX, customer.destinationY);
             console.log(`Customer ${customer.id} position:`, [lat, lng]);
 
-            const markerId = `customer-${customer.id}`;
+            // Handle the line and destination marker
+            if (!currentLines.has(lineId)) {
+                // Create new line
+                const polyline = L.polyline(
+                    [[lat, lng], [destLat, destLng]],
+                    {
+                        color: '#FF5722',
+                        weight: 2,
+                        opacity: 0.6,
+                        dashArray: '5, 10'
+                    }
+                ).addTo(map);
+
+                // Create destination marker
+                const destinationMarker = L.marker([destLat, destLng], {
+                    icon: L.divIcon({
+                        html: `<div style="
+                            background-color: #FF5722;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+                        "><i class="fas fa-flag" style="font-size: 10px; color: white;"></i></div>`,
+                        className: 'custom-marker'
+                    })
+                }).addTo(map);
+
+                destinationMarker.bindPopup(`
+                    <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
+                        <strong style="color: #1a1a1a;">Destination</strong><br>
+                        <span style="color: #666;">Customer ${customer.id}</span>
+                    </div>
+                `);
+
+                currentLines.set(lineId, {
+                    line: polyline,
+                    marker: destinationMarker
+                });
+            } else {
+                // Update existing line and marker positions
+                const lineObjects = currentLines.get(lineId);
+                lineObjects.line.setLatLngs([[lat, lng], [destLat, destLng]]);
+                lineObjects.marker.setLatLng([destLat, destLng]);
+            }
+
+            // Handle the customer marker
             if (!currentMarkers.has(markerId)) {
                 const customerMarker = L.marker([lat, lng], {
                     icon: L.divIcon({
@@ -222,36 +368,49 @@ function updateMap(data) { //predelat
                 currentMarkers.get(markerId).setLatLng([lat, lng]);
             }
         } else {
-            const markerId = `customer-${customer.id}`;
+            // Remove customer marker if not awaiting service
             if (currentMarkers.has(markerId)) {
                 map.removeLayer(currentMarkers.get(markerId));
                 currentMarkers.delete(markerId);
             }
+            
+            // Remove line and destination marker
+            if (currentLines.has(lineId)) {
+                const lineObjects = currentLines.get(lineId);
+                map.removeLayer(lineObjects.line);
+                map.removeLayer(lineObjects.marker);
+                currentLines.delete(lineId);
+            }
         }
     });
+
+    const busyVehicleIds = new Set();
+    data.vehicles.forEach(vehicle => {
+        data.customers.forEach(customer => {
+            if (!customer.awaitingService && // customer is not waiting (being transported)
+                vehicle.coordX === customer.coordX && 
+                vehicle.coordY === customer.coordY) {
+                busyVehicleIds.add(vehicle.id);
+            }
+        });
+    });
+
 
     // Update vehicles with realtime positions
     data.vehicles.forEach(vehicle => {
         let lat = vehicle.coordX;
         let lng = vehicle.coordY;
-
-        // Use realtime position if available
-        /*if (data.metadata?.realtime_positions?.[vehicle.id]) {
-            const realtimePos = data.metadata.realtime_positions[vehicle.id];
-            lat = realtimePos.x;
-            lng = realtimePos.y;
-            console.log(`Using realtime position for vehicle ${vehicle.id}:`, [lat, lng]);
-        }*/
-
+    
         const [boundedLat, boundedLng] = getPosition(lat, lng);
+        const isOccupied = busyVehicleIds.has(vehicle.id);
         console.log(`Vehicle ${vehicle.id} bounded position:`, [boundedLat, boundedLng]);
-
+    
         const markerId = `vehicle-${vehicle.id}`;
         if (!currentMarkers.has(markerId)) {
             const vehicleMarker = L.marker([boundedLat, boundedLng], {
                 icon: L.divIcon({
                     html: `<div style="
-                        background-color: ${vehicle.isAvailable ? '#4CAF50' : '#00BCD4'};
+                        background-color: ${isOccupied ? '#00BCD4' : '#4CAF50'};
                         width: 36px;
                         height: 36px;
                         border-radius: 50%;
@@ -263,12 +422,12 @@ function updateMap(data) { //predelat
                     className: 'custom-marker'
                 })
             }).addTo(map);
-
+    
             vehicleMarker.bindPopup(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
-                    <span style="color: ${vehicle.isAvailable ? '#4CAF50' : '#00BCD4'};">
-                        ${vehicle.isAvailable ? 'Available' : 'On trip with customer'}
+                    <span style="color: ${isOccupied ? '#00BCD4' : '#4CAF50'};">
+                        ${isOccupied ? 'On trip with customer' : 'Available'}
                     </span><br>
                     <span style="color: #4a5568;">
                         ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
@@ -276,14 +435,48 @@ function updateMap(data) { //predelat
                     </span>
                 </div>
             `);
-
+    
             currentMarkers.set(markerId, vehicleMarker);
         } else {
-            currentMarkers.get(markerId).setLatLng([boundedLat, boundedLng]);
+            const marker = currentMarkers.get(markerId);
+            marker.setLatLng([boundedLat, boundedLng]);
+            
+            // Update the icon when status changes
+            marker.setIcon(L.divIcon({
+                html: `<div style="
+                    background-color: ${isOccupied ? '#00BCD4' : '#4CAF50'};
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+                "><i class="fas fa-car-side"></i></div>`,
+                className: 'custom-marker'
+            }));
+    
+            // Update the popup content
+            marker.getPopup().setContent(`
+                <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
+                    <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
+                    <span style="color: ${isOccupied ? '#00BCD4' : '#4CAF50'};">
+                        ${isOccupied ? 'On trip with customer' : 'Available'}
+                    </span><br>
+                    <span style="color: #4a5568;">
+                        ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
+                        Position: [${lat.toFixed(6)}, ${lng.toFixed(6)}]
+                    </span>
+                </div>
+            `);
         }
+        //TODO: ADD GREEN LINE FROM CAR TO CUSTOMER
     });
+    
 }
 
+
+    
 function updateStats(data) {
     if (!data) return;
 
@@ -347,6 +540,10 @@ legend.onAdd = function(map) {
         <div class="legend-item">
             <i class="fas fa-car-side" style="color: #00BCD4;"></i>
             <span>Vehicle with Customer</span>
+        </div>
+        <div class="legend-item">
+            <i class="fas fa-flag" style="color: #FF5722;"></i>
+            <span>Customer Destination</span>
         </div>
     `;
     return div;
@@ -416,8 +613,15 @@ async function getScenarioState() {
         const response = await fetch(`/scenario/${currentScenarioId}`);
         if (!response.ok) throw new Error('Failed to get scenario state');
         
+        const data = await response.json();
+        
+        // Check if simulation has completed
+        if (data.status === "COMPLETED") {
+            showSimulationEndDialog();
+        }
+        
         lastUpdateTime = Date.now();
-        return await response.json();
+        return data;
     } catch (error) {
         console.error('Error getting scenario state:', error);
         return null;

@@ -28,22 +28,21 @@
         </div>
         <ul class="menu-items">
             <li class="menu-item">
-                <a href="{{ url_for('main.index') }}" class="menu-link {% if request.endpoint == 'main.map' %}active{% endif %}">
+                <a href="{{ url_for('main.map') }}" class="menu-link {% if request.endpoint == 'main.map' %}active{% endif %}">
                     <i class="menu-icon fas fa-map-location-dot"></i>
                     <span>Fleet Map</span>
                     <div class="status-indicator online"></div>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="{{ url_for('main.map') }}" class="menu-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+                <a href="{{ url_for('main.analytics') }}" class="menu-link {% if request.endpoint == 'main.analytics' %}active{% endif %}">
                     <i class="menu-icon fas fa-chart-line"></i>
                     <span>Analytics</span>
                 </a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="menu-icon fas fa-leaf"></i>
-                    <span>Environmental Impact</span>
+                <a href="{{ url_for('main.environment') }}" class="menu-link {% if request.endpoint == 'main.environment' %}active{% endif %}">                    <i class="menu-icon fas fa-leaf"></i>
+                    <span>Environmental Data</span>
                     <div class="eco-badge">+12%</div>
                 </a>
             </li>
@@ -57,7 +56,7 @@
         </div>
         <ul class="menu-items">
             <li class="menu-item">
-                <a href="#" class="menu-link">
+                <a href="{{ url_for('main.vehicles') }}" class="menu-link {% if request.endpoint == 'main.vehicles' %}active{% endif %}">
                     <i class="menu-icon fas fa-car"></i>
                     <span>Vehicles</span>
                     <div class="status-pill">All Operational</div>

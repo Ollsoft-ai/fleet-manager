@@ -12,27 +12,24 @@
     "endTime": "2024-11-23T14:14:55.668925",
     "id": "eca895c8-90cd-4bbf-a4ea-f1e57ac5af75",
     "metadata": {
-        "realtime_positions": {
-            "762c5381-9f26-4d8b-8dbc-52c4337c8f29": {
-                "progress": 1.0,
-                "x": 48.15735,
-                "y": 11.573449
-            }
-        },
-        "start_time": "2024-11-23T14:14:23.849024",
-        "vehicle_assignments": {
-            "762c5381-9f26-4d8b-8dbc-52c4337c8f29": {
-                "initial_travel_time": 177,
-                "start_position": {
-                    "x": 48.14087,
-                    "y": 11.552323
-                },
-                "start_time": "2024-11-23T14:14:25.502422",
-                "target_position": {
-                    "x": 48.15735,
-                    "y": 11.573449
-                }
-            }
+        "average_travel_time_to_customer_location": 177.0,
+        "average_travel_distance_to_customer_location": 5549.358232592284,
+        "vehicle_utilization_rate": 0.0, //active time (having a customer assigned) / total time
+        "total_distance_travelled": 5549.358232592284,
+        "total_distance_without_customer": 0,
+        "total_distance_with_customer": 5549.358232592284,
+        "average_customer_wait_time": 0,
+        "realtime_kpis": {
+            "completion_rate": 0.0, //customers served / total customers !
+            "fuel_saved": 0, // (non_optimal travel distance - optimal travel distance) * fuel consumption ! 
+            "total_travel_time": 584.0, // !
+            "total_travel_distance": 5549.358232592284, // !
+            "average_number_of_trips_per_vehicle": 1.0, // ! total number of trips / number of vehicles
+            "number_of_waiting_customers": 0,
+            "number_of_available_vehicles": 1,
+            "number_of_taken_vehicles": 0,
+            "average_customer_trip_distance": 5549.358232592284,
+            "average_vehicle_speed": 0
         }
     },
     "startTime": "2024-11-23T14:14:23.665569",
