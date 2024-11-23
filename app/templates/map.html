@@ -18,29 +18,47 @@
         <div class="stats-overlay">
             <div class="stat-item">
                 <div class="stat-icon">
-                    <i class="fas fa-satellite"></i>
+                    <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-value">98.7%</div>
-                    <div class="stat-label">System Uptime</div>
+                    <div class="stat-value" id="completion-rate">0%</div>
+                    <div class="stat-label">Completion Rate</div>
                 </div>
             </div>
             <div class="stat-item">
                 <div class="stat-icon">
-                    <i class="fas fa-signal"></i>
+                    <i class="fas fa-car"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-value">124/125</div>
-                    <div class="stat-label">Connected Units</div>
+                    <div class="stat-value" id="vehicle-stats">0/0</div>
+                    <div class="stat-label">Available Vehicles</div>
                 </div>
             </div>
             <div class="stat-item">
                 <div class="stat-icon">
-                    <i class="fas fa-clock"></i>
+                    <i class="fas fa-chart-line"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-value">Live</div>
-                    <div class="stat-label">Last Update: 2s ago</div>
+                    <div class="stat-value" id="utilization-rate">0%</div>
+                    <div class="stat-label">Vehicle Utilization</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value" id="total-distance">0 km</div>
+                    <div class="stat-label">Total Distance</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value" id="total-time">0s</div>
+                    <div class="stat-label">Total Time</div>
                 </div>
             </div>
         </div>
@@ -51,9 +69,13 @@
                 <select id="scenarioSelect" class="scenario-select">
                     <option value="">Select a scenario...</option>
                 </select>
-                <button class="run-scenario">
+                <button class="run-scenario optimized">
                     <i class="fas fa-play"></i>
-                    Run Scenario
+                    Run Optimized
+                </button>
+                <button class="run-scenario naive">
+                    <i class="fas fa-play"></i>
+                    Run Naive
                 </button>
             </div>
         </div>
@@ -68,7 +90,7 @@
             <i class="fas fa-moon"></i>
         </div>
         <h2>End of Day</h2>
-        <p>All fleet operations have been completed for today. Your vehicles have served the city well!</p>
+        <p>Your vehicles have served the city well!</p>
         <button onclick="closeSimulationEndDialog()" class="modal-close-btn">
             <i class="fas fa-check"></i> Close
         </button>
@@ -186,6 +208,85 @@
     .modal-close-btn:hover {
         background-color: #357abd;
     }
+
+    .scenario-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .run-scenario {
+        padding: 8px 16px;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        background-color: #E20074;
+        color: white;
+    }
+
+    .run-scenario.running {
+        display: none;
+    }
+
+    .run-scenario.running.active {
+        display: flex;
+        background-color: #E20074;
+    }
+
+    .run-scenario:hover {
+        opacity: 0.9;
+    }
+
+    .stats-overlay {
+        display: flex;
+        gap: 20px;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        background-color: #E20074;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stat-icon i {
+        color: white;
+        font-size: 18px;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #666;
+    }
 </style>
 
 <script>
@@ -236,6 +337,48 @@ function updateLastUpdateTime() {
     }
 }
 
+// Function to fetch the initial state of a scenario from the template endpoint
+async function fetchScenarioTemplate(scenarioId) {
+    try {
+        const response = await fetch(`/scenario_template/${scenarioId}`);
+        if (!response.ok) throw new Error('Failed to fetch scenario template');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching scenario template:', error);
+        return null;
+    }
+}
+
+// Event listener for scenario selection change
+async function handleScenarioSelection(event) {
+    const scenarioId = event.target.value;
+
+    // Clear the map first
+    clearMap();
+
+    if (!scenarioId) {
+        console.log('No scenario selected');
+        return;
+    }
+
+    // Fetch the scenario template data
+    const scenarioData = await fetchScenarioTemplate(scenarioId);
+
+    if (scenarioData) {
+        // Update the map and stats with the template data
+        updateMap(scenarioData, true);
+        updateStats(scenarioData);
+    } else {
+        console.error('No data available for the selected scenario');
+    }
+}
+
+// Add the event listener to the scenario selection dropdown
+document.addEventListener('DOMContentLoaded', () => {
+    const scenarioSelect = document.getElementById('scenarioSelect');
+    scenarioSelect.addEventListener('change', handleScenarioSelection);
+});
 
 function clearMap() {
     // Clear all customer and vehicle markers
@@ -265,12 +408,19 @@ function clearMap() {
 }
 
 function showSimulationEndDialog() {
-    document.getElementById('simulationEndDialog').style.display ='flex';
-    simulationRunning = false;
-    currentScenarioId = null;
-    updateUI(false);
-    stopUpdates();
-    clearMap();
+    // Get one final update before showing the dialog
+    getScenarioState().then(finalState => {
+        if (finalState) {
+            updateMap(finalState);
+            updateStats(finalState);
+        }
+        
+        document.getElementById('simulationEndDialog').style.display = 'flex';
+        simulationRunning = false;
+        currentScenarioId = null;
+        updateUI(false);
+        stopUpdates();
+    });
 }
 
 function closeSimulationEndDialog() {
@@ -301,8 +451,8 @@ function getPosition(coordX, coordY) { //smazat
     return [boundedLat, boundedLng];
 }
 
-function updateMap(data) {
-    if (!simulationRunning) {
+function updateMap(data, ignoreFlagington=false) {
+    if (!simulationRunning && !ignoreFlagington) {
         console.log('Update is skipped, simulation is not running.');
         return;
     }
@@ -479,7 +629,7 @@ function updateMap(data) {
             const vehicleMarker = L.marker([boundedLat, boundedLng], {
                 icon: L.divIcon({
                     html: `<div style="
-                        background-color: '#4CAF50';
+                        background-color: #4CAF50;
                         width: 36px;
                         height: 36px;
                         border-radius: 50%;
@@ -495,13 +645,6 @@ function updateMap(data) {
             vehicleMarker.bindPopup(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
-                    <span style="color: #4CAF50;">
-                        ${isOccupied ? 'On trip with customer' : 'Available'}
-                    </span><br>
-                    <span style="color: #4a5568;">
-                        ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
-                        Position: [${lat.toFixed(6)}, ${lng.toFixed(6)}]
-                    </span>
                 </div>
             `);
 
@@ -527,13 +670,6 @@ function updateMap(data) {
             marker.getPopup().setContent(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
-                    <span style="color: #4CAF50;">
-                        ${isOccupied ? 'On trip with customer' : 'Available'}
-                    </span><br>
-                    <span style="color: #4a5568;">
-                        ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
-                        Position: [${lat.toFixed(6)}, ${lng.toFixed(6)}]
-                    </span>
                 </div>
             `);
         }
@@ -541,17 +677,44 @@ function updateMap(data) {
 }
 
 function updateStats(data) {
-    if (!data) return;
+    if (!data?.metadata?.metadata?.realtime_kpis) return;
 
-    // Update connected units
-    const totalVehicles = data.vehicles?.length || 0;
-    const connectedUnitsElement = document.querySelector('.stats-overlay .stat-item:nth-child(2) .stat-value');
-    if (connectedUnitsElement) {
-        connectedUnitsElement.textContent = `${totalVehicles}/${totalVehicles}`;
+    const metadata = data.metadata.metadata;
+    const realtimeKpis = metadata.realtime_kpis;
+
+    // Update completion rate
+    const completionRate = document.getElementById('completion-rate');
+    if (completionRate) {
+        completionRate.textContent = `${(realtimeKpis.completion_rate * 100 || 0).toFixed(1)}%`;
     }
 
-    // Update last update time
-    updateLastUpdateTime();
+    // Update vehicle stats
+    const vehicleStats = document.getElementById('vehicle-stats');
+    if (vehicleStats) {
+        const availableVehicles = realtimeKpis.number_of_available_vehicles || 0;
+        const takenVehicles = realtimeKpis.number_of_taken_vehicles || 0;
+        vehicleStats.textContent = `${availableVehicles}/${availableVehicles + takenVehicles}`;
+    }
+
+    // Update utilization rate
+    const utilizationRate = document.getElementById('utilization-rate');
+    if (utilizationRate) {
+        utilizationRate.textContent = `${(metadata.vehicle_utilization_rate || 0).toFixed(1)}%`;
+    }
+
+    // Update total distance
+    const totalDistance = document.getElementById('total-distance');
+    if (totalDistance) {
+        const distance = realtimeKpis.total_travel_distance || 0;
+        totalDistance.textContent = `${(distance / 1000).toFixed(1)} km`;
+    }
+
+    // Update total time
+    const totalTime = document.getElementById('total-time');
+    if (totalTime) {
+        const time = realtimeKpis.total_travel_time || 0;
+        totalTime.textContent = `${Math.round(time)}s`;
+    }
 }
 
 function startUpdates() {
@@ -577,13 +740,22 @@ function stopUpdates() {
 }
 
 function updateUI(running) {
-    const runButton = document.querySelector('.run-scenario');
+    const optimizedButton = document.querySelector('.run-scenario.optimized');
+    const naiveButton = document.querySelector('.run-scenario.naive');
+    
     if (running) {
-        runButton.innerHTML = `<i class="fas fa-stop"></i> Stop Scenario`;
-        runButton.classList.add('running');
+        // Determine which button was clicked and make it the active stop button
+        const activeButton = document.activeElement.classList.contains('optimized') ? optimizedButton : naiveButton;
+        const inactiveButton = activeButton === optimizedButton ? naiveButton : optimizedButton;
+        
+        activeButton.innerHTML = `<i class="fas fa-stop"></i> Stop`;
+        activeButton.classList.add('running', 'active');
+        inactiveButton.classList.remove('running');
     } else {
-        runButton.innerHTML = `<i class="fas fa-play"></i> Run Scenario`;
-        runButton.classList.remove('running');
+        optimizedButton.innerHTML = `<i class="fas fa-play"></i> Run Optimized`;
+        naiveButton.innerHTML = `<i class="fas fa-play"></i> Run Naive`;
+        optimizedButton.classList.remove('running');
+        naiveButton.classList.remove('running');
     }
 }
 
@@ -600,10 +772,6 @@ legend.onAdd = function(map) {
         <div class="legend-item">
             <i class="fas fa-car-side" style="color: #4CAF50;"></i>
             <span>Available Vehicle</span>
-        </div>
-        <div class="legend-item">
-            <i class="fas fa-car-side" style="color: #00BCD4;"></i>
-            <span>Vehicle with Customer</span>
         </div>
         <div class="legend-item">
             <i class="fas fa-flag" style="color: #FF5722;"></i>
@@ -634,9 +802,9 @@ async function loadScenarios() {
     }
 }
 
-async function runScenario(scenarioId) {
+async function runScenario(scenarioId, algorithm = 'optimized') {
     try {
-        const response = await fetch(`/run/${scenarioId}`, {
+        const response = await fetch(`/run/${scenarioId}?algorithm=${algorithm}`, {
             method: 'POST'
         });
         
@@ -680,12 +848,13 @@ async function getScenarioState() {
         
         const data = await response.json();
         
-        // Check if simulation has completed
-        if (data.status === "COMPLETED") {
+        // Check if simulation has effectively completed
+        if (data.status === "COMPLETED" || 
+            (data?.metadata?.metadata?.realtime_kpis?.completion_rate === 1 && 
+             data?.metadata?.metadata?.realtime_kpis?.number_of_waiting_customers === 0)) {
             showSimulationEndDialog();
         }
         
-        lastUpdateTime = Date.now();
         return data;
     } catch (error) {
         console.error('Error getting scenario state:', error);
@@ -697,19 +866,25 @@ async function getScenarioState() {
 document.addEventListener('DOMContentLoaded', () => {
     loadScenarios();
     
-    const runButton = document.querySelector('.run-scenario');
-    runButton.addEventListener('click', async () => {
+    const optimizedButton = document.querySelector('.run-scenario.optimized');
+    const naiveButton = document.querySelector('.run-scenario.naive');
+    
+    async function handleRunClick(algorithm) {
+        const scenarioId = document.getElementById('scenarioSelect').value;
+        if (!scenarioId) {
+            alert('Please select a scenario first');
+            return;
+        }
+        
         if (simulationRunning) {
             await stopScenario();
         } else {
-            const scenarioId = document.getElementById('scenarioSelect').value;
-            if (!scenarioId) {
-                alert('Please select a scenario first');
-                return;
-            }
-            await runScenario(scenarioId);
+            await runScenario(scenarioId, algorithm);
         }
-    });
+    }
+    
+    optimizedButton.addEventListener('click', () => handleRunClick('optimized'));
+    naiveButton.addEventListener('click', () => handleRunClick('naive'));
 });
 </script>
 {% endblock %}

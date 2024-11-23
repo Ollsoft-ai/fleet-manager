@@ -45,7 +45,13 @@ def scenario_template(scenario_id):
 
 @main.route('/run/<scenario_id>', methods=['POST']) # second you run the scenario
 def run(scenario_id):
-    #get scneario from db
+    # Get algorithm type from request parameters, default to "optimized"
+    algorithm = request.args.get('algorithm', 'optimized')
+    
+    if algorithm not in ['optimized', 'naive']:
+        return {"error": "Invalid algorithm type. Must be 'optimized' or 'naive'"}, 400
+
+    # get scenario from db
     headers = {'Content-Type': 'application/json'}
     response = requests.get(
         f"{BASE_URL_BACKEND}/scenarios/{scenario_id}",
@@ -74,11 +80,11 @@ def run(scenario_id):
     if response.status_code != 200:
         return {"error": f"Failed to start simulation: Status {response.status_code} {response.text}"}, response.status_code
 
-    # Start the controller task
-    task = run_scenario_controller.delay(scenario_id)
+    # Start the controller task with the specified algorithm
+    task = run_scenario_controller.delay(scenario_id, algorithm=algorithm)
     active_scenarios[scenario_id] = task.id
     
-    return {"message": "Simulation started", "task_id": task.id}, 200
+    return {"message": "Simulation started", "task_id": task.id, "algorithm": algorithm}, 200
 
 @main.route('/stop/<scenario_id>', methods=['POST'])
 def stop(scenario_id):
