@@ -94,7 +94,6 @@
     }
 
     :root {
-        --sidebar-width: 280px;
     }
     
     #map {
@@ -108,7 +107,7 @@
 </style>
 
 <script>
-    // Constants
+// Constants
 const MUNICH_CENTER = [48.137154, 11.576124]; // [lat, lng]
 const MUNICH_BOUNDS = {
     lat: { min: 48.0, max: 48.25 },
@@ -145,6 +144,7 @@ let simulationRunning = false;
 let updateInterval;
 let lastUpdateTime = Date.now();
 let currentMarkers = new Map();
+let currentLines = new Map();
 
 function updateLastUpdateTime() {
     const timeDiff = Math.round((Date.now() - lastUpdateTime) / 1000);
@@ -177,7 +177,7 @@ function getPosition(coordX, coordY) { //smazat
     return [boundedLat, boundedLng];
 }
 
-function updateMap(data) { //predelat
+function updateMap(data) {
     console.log('Updating map with new data:', data);
 
     if (!data?.vehicles || !data?.customers) {
@@ -187,11 +187,63 @@ function updateMap(data) { //predelat
 
     // Update customers
     data.customers.forEach(customer => {
+        const markerId = `customer-${customer.id}`;
+        const lineId = `line-${customer.id}`;
+
         if (customer.awaitingService) {
             const [lat, lng] = getPosition(customer.coordX, customer.coordY);
+            const [destLat, destLng] = getPosition(customer.destinationX, customer.destinationY);
             console.log(`Customer ${customer.id} position:`, [lat, lng]);
 
-            const markerId = `customer-${customer.id}`;
+            // Handle the line and destination marker
+            if (!currentLines.has(lineId)) {
+                // Create new line
+                const polyline = L.polyline(
+                    [[lat, lng], [destLat, destLng]],
+                    {
+                        color: '#FF5722',
+                        weight: 2,
+                        opacity: 0.6,
+                        dashArray: '5, 10'
+                    }
+                ).addTo(map);
+
+                // Create destination marker
+                const destinationMarker = L.marker([destLat, destLng], {
+                    icon: L.divIcon({
+                        html: `<div style="
+                            background-color: #FF5722;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+                        "><i class="fas fa-flag" style="font-size: 10px; color: white;"></i></div>`,
+                        className: 'custom-marker'
+                    })
+                }).addTo(map);
+
+                destinationMarker.bindPopup(`
+                    <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
+                        <strong style="color: #1a1a1a;">Destination</strong><br>
+                        <span style="color: #666;">Customer ${customer.id}</span>
+                    </div>
+                `);
+
+                currentLines.set(lineId, {
+                    line: polyline,
+                    marker: destinationMarker
+                });
+            } else {
+                // Update existing line and marker positions
+                const lineObjects = currentLines.get(lineId);
+                lineObjects.line.setLatLngs([[lat, lng], [destLat, destLng]]);
+                lineObjects.marker.setLatLng([destLat, destLng]);
+            }
+
+            // Handle the customer marker
             if (!currentMarkers.has(markerId)) {
                 const customerMarker = L.marker([lat, lng], {
                     icon: L.divIcon({
@@ -222,10 +274,18 @@ function updateMap(data) { //predelat
                 currentMarkers.get(markerId).setLatLng([lat, lng]);
             }
         } else {
-            const markerId = `customer-${customer.id}`;
+            // Remove customer marker if not awaiting service
             if (currentMarkers.has(markerId)) {
                 map.removeLayer(currentMarkers.get(markerId));
                 currentMarkers.delete(markerId);
+            }
+            
+            // Remove line and destination marker
+            if (currentLines.has(lineId)) {
+                const lineObjects = currentLines.get(lineId);
+                map.removeLayer(lineObjects.line);
+                map.removeLayer(lineObjects.marker);
+                currentLines.delete(lineId);
             }
         }
     });
@@ -347,6 +407,10 @@ legend.onAdd = function(map) {
         <div class="legend-item">
             <i class="fas fa-car-side" style="color: #00BCD4;"></i>
             <span>Vehicle with Customer</span>
+        </div>
+        <div class="legend-item">
+            <i class="fas fa-flag" style="color: #FF5722;"></i>
+            <span>Customer Destination</span>
         </div>
     `;
     return div;

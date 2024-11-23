@@ -129,6 +129,19 @@ def scenario(scenario_id):
 def map():
     return render_template('map.html')
 
+
+@main.route('/analytics')
+def analytics(): 
+    return render_template('analytics.html')
+
+
+@main.route('/environment')
+def environment():
+    return render_template('environment.html')
+
+@main.route('/vehicles')
+def vehicles(): 
+    return render_template('vehicles.html')
 #@main.app_context_processor
 #def inject_conf_var():
 #    return dict(

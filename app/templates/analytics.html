@@ -1,0 +1,599 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'sidebar.html' %}
+<div class="analytics-wrapper">
+    <!-- Top Stats Row -->
+    <div class="stats-row">
+        <div class="anal-stat-card primary">
+            <div class="anal-stat-header">
+                <span>Fleet Performance</span>
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-main">98.7%</div>
+            <div class="stat-footer">
+                <span class="trend-positive">+2.3% vs last week</span>
+            </div>
+        </div>
+
+        <div class="anal-stat-card">
+            <div class="anal-stat-header">
+                <span>Active Vehicles</span>
+                <i class="fas fa-car"></i>
+            </div>
+            <div class="stat-main">124/125</div>
+            <div class="stat-footer">Optimal Capacity</div>
+        </div>
+
+        <div class="anal-stat-card">
+            <div class="anal-stat-header">
+                <span>Total Distance</span>
+                <i class="fas fa-route"></i>
+            </div>
+            <div class="stat-main">12,458 km</div>
+            <div class="stat-footer">
+                <span class="trend-positive">+842 km today</span>
+            </div>
+        </div>
+
+        <div class="anal-stat-card">
+            <div class="anal-stat-header">
+                <span>Energy Efficiency</span>
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="stat-main">94.3%</div>
+            <div class="stat-footer">Optimal Range</div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Fleet Utilization Chart -->
+        <div class="chart-section main-chart">
+            <div class="section-header">
+                <h2>Fleet Utilization by Hour</h2>
+                <div class="time-controls">
+                    <button class="time-btn active">24H</button>
+                    <button class="time-btn">7D</button>
+                    <button class="time-btn">30D</button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="utilizationChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metrics-section">
+            <div class="section-header">
+                <h2>Key Metrics</h2>
+                <div class="refresh-indicator">
+                    <span class="pulse-dot"></span>
+                    Live
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="metricsRadar"></canvas>
+            </div>
+        </div>
+
+        <!-- Trip Distribution -->
+        <div class="chart-section">
+            <div class="section-header">
+                <h2>Trip Distribution</h2>
+                <div class="legend">
+                    <span><i class="fas fa-circle weekday"></i> Weekday</span>
+                    <span><i class="fas fa-circle weekend"></i> Weekend</span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="tripChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Vehicle Status -->
+        <div class="status-section">
+            <div class="section-header">
+                <h2>Vehicle Status</h2>
+                <span class="real-time-badge">Real-time</span>
+            </div>
+            <div class="status-bars">
+                <div class="status-item">
+                    <div class="status-label">
+                        <span>Available</span>
+                        <span>85</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 85%"></div>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">
+                        <span>On Trip</span>
+                        <span>32</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 32%"></div>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">
+                        <span>Charging</span>
+                        <span>8</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 8%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Metrics -->
+        <div class="quick-metrics">
+            <div class="metric-card">
+                <div class="metric-header">Response Time</div>
+                <div class="metric-value">1.2s</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">Battery Health</div>
+                <div class="metric-value">97%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">Route Efficiency</div>
+                <div class="metric-value">94%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">Safety Score</div>
+                <div class="metric-value">99.8</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --tmobile-magenta: #E20074;
+    --tmobile-magenta-dark: #B1005C;
+    --tmobile-light: #FAF9FA;
+    --success-green: #36B37E;
+    --chart-grid: #F0F0F0;
+}
+
+.analytics-wrapper {
+    margin-left: var(--sidebar-width);
+    height: 100vh;
+    padding: 1.5rem;
+    background: var(--tmobile-light);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow: hidden;
+}
+
+/* Stats Row */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.anal-stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.anal-stat-card.primary {
+    background: linear-gradient(135deg, var(--tmobile-magenta), var(--tmobile-magenta-dark));
+    color: white;
+}
+
+.anal-stat-card.primary span {
+    color: white !important;
+}
+.anal-stat-card.primary i {
+    color: white !important;
+}
+
+
+
+.anal-stat-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+}
+
+.stat-main {
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+.stat-footer {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.trend-positive {
+    color: var(--success-green);
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr)); /* This is important */
+    gap: 1rem;
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - 180px); /* Adjust based on your stats row height + padding */
+}
+
+.main-chart {
+    grid-column: span 2;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+/* Chart Sections */
+.chart-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-container {
+    position: relative;
+    flex: 1;
+    min-height: 0; /* Important for Firefox */
+    width: 100%;
+}
+
+/* Time Controls */
+.time-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.time-btn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.time-btn.active {
+    background: var(--tmobile-magenta);
+    color: white;
+    border-color: var(--tmobile-magenta);
+}
+
+/* Status Section */
+.status-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.status-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.status-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #F0F0F0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background: var(--tmobile-magenta);
+    border-radius: 4px;
+}
+
+/* Quick Metrics */
+.quick-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.metric-card {
+    background: #F8F9FA;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.metric-header {
+    font-size: 0.875rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.metric-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+/* Ensure charts don't overflow */
+canvas {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Utilization Chart
+        new Chart(document.getElementById('utilizationChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${String(i).padStart(2, '0')}:00`),
+                datasets: [{
+                    label: 'Fleet Utilization',
+                    data: [80, 78, 76, 75, 74, 75, 78, 82, 85, 84, 86, 87, 88, 87, 86, 87, 89, 88, 86, 84, 82, 80, 81, 80],
+                    borderColor: '#E20074',
+                    backgroundColor: 'rgba(226, 0, 116, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHitRadius: 8
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#1a1a1a',
+                        bodyColor: '#666666',
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y}% Utilization`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#f0f0f0',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#666666',
+                            font: {
+                                size: 11
+                            },
+                            maxRotation: 0
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: '#f0f0f0',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#666666',
+                            font: {
+                                size: 11
+                            },
+                            callback: value => `${value}%`
+                        }
+                    }
+                }
+            }
+        });
+    
+        // Metrics Radar Chart
+        new Chart(document.getElementById('metricsRadar').getContext('2d'), {
+            type: 'radar',
+            data: {
+                labels: [
+                    'Response Time',
+                    'Battery Health',
+                    'Route Efficiency',
+                    'Customer Satisfaction',
+                    'Safety Score',
+                    'Maintenance'
+                ],
+                datasets: [{
+                    label: 'Current',
+                    data: [95, 97, 94, 92, 99, 93],
+                    borderColor: '#E20074',
+                    backgroundColor: 'rgba(226, 0, 116, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#E20074'
+                }, {
+                    label: 'Previous',
+                    data: [90, 94, 90, 88, 97, 89],
+                    borderColor: '#999999',
+                    backgroundColor: 'rgba(153, 153, 153, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#999999'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            display: false
+                        },
+                        grid: {
+                            color: '#f0f0f0'
+                        },
+                        angleLines: {
+                            color: '#f0f0f0'
+                        },
+                        pointLabels: {
+                            color: '#666666',
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    
+        // Trip Distribution Chart
+        new Chart(document.getElementById('tripChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['6-9', '9-12', '12-15', '15-18', '18-21', '21-24'],
+                datasets: [{
+                    label: 'Weekday',
+                    data: [380, 320, 280, 350, 400, 320],
+                    backgroundColor: '#E20074',
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                }, {
+                    label: 'Weekend',
+                    data: [280, 300, 320, 360, 380, 340],
+                    backgroundColor: '#00BCD4',
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#1a1a1a',
+                        bodyColor: '#666666',
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y} trips`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#666666',
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#f0f0f0',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#666666',
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    
+        // Add event listeners for time control buttons
+        document.querySelectorAll('.time-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.time-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Here you would typically update the chart data based on the selected time range
+                // For example:
+                // updateChartData(this.textContent);
+            });
+        });
+    });
+    
+    // Optional: Add real-time updates
+    function updateChartsInRealTime() {
+        setInterval(() => {
+            // Add your real-time update logic here
+        }, 5000);
+    }
+</script>
+{% endblock %}
