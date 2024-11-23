@@ -39,6 +39,10 @@ def main():
             print(f"Failed to get scenario: {response.status_code} {response.text}")
             return
         print(response.json())
+
+        # write the json to a file
+        with open("scenario_state.json", "w") as f:
+            json.dump(response.json(), f, indent=4)
         time.sleep(2)
 
 if __name__ == "__main__":

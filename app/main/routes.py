@@ -9,7 +9,7 @@ from redis import Redis
 
 BASE_URL_RUNNER = "http://scenariorunner:8090"
 BASE_URL_BACKEND = "http://backend:8080"
-SIMULATION_SPEED = 0.05
+SIMULATION_SPEED = 0.001
 
 # Add this to store active scenario tasks
 active_scenarios = {}

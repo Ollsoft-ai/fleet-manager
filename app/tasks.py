@@ -99,7 +99,7 @@ def run_scenario_controller(self, scenario_id):
             print(f"Assigned customer {customer_to_run['id']} to vehicle {vehicle_to_run['id']}")
 
         # print the first car
-        print(f"vehicle: remaining time: {vehicle_to_run['remainingTravelTime']}, x and y coord: {vehicle_to_run['coordX']}, {vehicle_to_run['coordY']}")
-        print(f"customer: awaiting service: {customer_to_run['awaitingService']}, x and y coord: {customer_to_run['coordX']}, {customer_to_run['coordY']}")
-        print("--------------------------------")
-        time.sleep(0.5)
+        #print(f"vehicle: remaining time: {vehicle_to_run['remainingTravelTime']}, x and y coord: {vehicle_to_run['coordX']}, {vehicle_to_run['coordY']}")
+        #print(f"customer: awaiting service: {customer_to_run['awaitingService']}, x and y coord: {customer_to_run['coordX']}, {customer_to_run['coordY']}")
+        #print("--------------------------------")
+        time.sleep(0.005)

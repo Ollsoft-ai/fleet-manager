@@ -1,0 +1,54 @@
+{
+    "customers": [
+        {
+            "awaitingService": false,
+            "coordX": 48.132607,
+            "coordY": 11.508494,
+            "destinationX": 48.132607,
+            "destinationY": 11.508494,
+            "id": "a3dbd9cb-3e73-472f-a954-cd74634cfac0"
+        }
+    ],
+    "endTime": "2024-11-23T14:14:55.668925",
+    "id": "eca895c8-90cd-4bbf-a4ea-f1e57ac5af75",
+    "metadata": {
+        "realtime_positions": {
+            "762c5381-9f26-4d8b-8dbc-52c4337c8f29": {
+                "progress": 1.0,
+                "x": 48.15735,
+                "y": 11.573449
+            }
+        },
+        "start_time": "2024-11-23T14:14:23.849024",
+        "vehicle_assignments": {
+            "762c5381-9f26-4d8b-8dbc-52c4337c8f29": {
+                "initial_travel_time": 177,
+                "start_position": {
+                    "x": 48.14087,
+                    "y": 11.552323
+                },
+                "start_time": "2024-11-23T14:14:25.502422",
+                "target_position": {
+                    "x": 48.15735,
+                    "y": 11.573449
+                }
+            }
+        }
+    },
+    "startTime": "2024-11-23T14:14:23.665569",
+    "status": "COMPLETED",
+    "vehicles": [
+        {
+            "activeTime": 584,
+            "coordX": 48.132607,
+            "coordY": 11.508494,
+            "customerId": null,
+            "distanceTravelled": 5549.358232592284,
+            "id": "762c5381-9f26-4d8b-8dbc-52c4337c8f29",
+            "isAvailable": true,
+            "numberOfTrips": 1,
+            "remainingTravelTime": null,
+            "vehicleSpeed": 0
+        }
+    ]
+}

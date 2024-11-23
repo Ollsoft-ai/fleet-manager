@@ -48,8 +48,8 @@
         <!-- Scenario Controls Overlay -->
         <div class="controls-overlay">
             <div class="scenario-controls">
-                <select class="scenario-select">
-                    <option value="863eb000-ba17-406d-8252-4829ecdd8a86">Default Scenario</option>
+                <select id="scenarioSelect" class="scenario-select">
+                    <option value="">Select a scenario...</option>
                 </select>
                 <button class="run-scenario">
                     <i class="fas fa-play"></i>
@@ -126,13 +126,12 @@ const map = L.map('map', {
     zoom: 12,
     maxBounds: MAX_BOUNDS,
     minZoom: 11,
-    zoomControl: false
+    zoomControl: false,
+    attributionControl: false
 });
 
 // Add map tiles
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '©OpenStreetMap, ©CartoDB',
-    subdomains: 'abcd'
 }).addTo(map);
 
 // Add zoom control
@@ -141,7 +140,7 @@ L.control.zoom({
 }).addTo(map);
 
 // Global variables
-let currentScenarioId = '3790cde4-0fa6-4fdf-a8da-decbabfaa570';
+let currentScenarioId = null;
 let simulationRunning = false;
 let updateInterval;
 let lastUpdateTime = Date.now();
@@ -155,7 +154,7 @@ function updateLastUpdateTime() {
     }
 }
 
-function getPosition(coordX, coordY) {
+function getPosition(coordX, coordY) { //smazat
     // Handle null or undefined coordinates
     if (coordX == null || coordY == null) {
         console.warn('Null coordinates received:', { coordX, coordY });
@@ -178,7 +177,7 @@ function getPosition(coordX, coordY) {
     return [boundedLat, boundedLng];
 }
 
-function updateMap(data) {
+function updateMap(data) { //predelat
     console.log('Updating map with new data:', data);
 
     if (!data?.vehicles || !data?.customers) {
@@ -231,14 +230,25 @@ function updateMap(data) {
         }
     });
 
-    // Update vehicles
+    // Update vehicles with realtime positions
     data.vehicles.forEach(vehicle => {
-        const [lat, lng] = getPosition(vehicle.coordX, vehicle.coordY);
-        console.log(`Vehicle ${vehicle.id} position:`, [lat, lng]);
+        let lat = vehicle.coordX;
+        let lng = vehicle.coordY;
+
+        // Use realtime position if available
+        /*if (data.metadata?.realtime_positions?.[vehicle.id]) {
+            const realtimePos = data.metadata.realtime_positions[vehicle.id];
+            lat = realtimePos.x;
+            lng = realtimePos.y;
+            console.log(`Using realtime position for vehicle ${vehicle.id}:`, [lat, lng]);
+        }*/
+
+        const [boundedLat, boundedLng] = getPosition(lat, lng);
+        console.log(`Vehicle ${vehicle.id} bounded position:`, [boundedLat, boundedLng]);
 
         const markerId = `vehicle-${vehicle.id}`;
         if (!currentMarkers.has(markerId)) {
-            const vehicleMarker = L.marker([lat, lng], {
+            const vehicleMarker = L.marker([boundedLat, boundedLng], {
                 icon: L.divIcon({
                     html: `<div style="
                         background-color: ${vehicle.isAvailable ? '#4CAF50' : '#00BCD4'};
@@ -269,65 +279,23 @@ function updateMap(data) {
 
             currentMarkers.set(markerId, vehicleMarker);
         } else {
-            currentMarkers.get(markerId).setLatLng([lat, lng]);
+            currentMarkers.get(markerId).setLatLng([boundedLat, boundedLng]);
         }
     });
 }
 
 function updateStats(data) {
-    try {
-        const totalUnits = data.vehicles.length;
-        const availableUnits = data.vehicles.filter(v => v.isAvailable).length;
-        
-        console.log('Updating stats:', { totalUnits, availableUnits });
-        
-        document.querySelector('.stats-overlay .stat-item:nth-child(2) .stat-value').textContent = 
-            `${availableUnits}/${totalUnits}`;
+    if (!data) return;
 
-        const uptime = 100;
-        document.querySelector('.stats-overlay .stat-item:first-child .stat-value').textContent = 
-            `${uptime.toFixed(1)}%`;
-    } catch (error) {
-        console.error('Error updating stats:', error);
+    // Update connected units
+    const totalVehicles = data.vehicles?.length || 0;
+    const connectedUnitsElement = document.querySelector('.stats-overlay .stat-item:nth-child(2) .stat-value');
+    if (connectedUnitsElement) {
+        connectedUnitsElement.textContent = `${totalVehicles}/${totalVehicles}`;
     }
-}
 
-async function getScenarioState() {
-    try {
-        console.log('Fetching scenario state for ID:', currentScenarioId);
-        const response = await fetch(`/scenario/${currentScenarioId}`);
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`Failed to fetch scenario state: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Full API Response:', JSON.stringify(data, null, 2));
-
-        if (!data || !data.vehicles || !data.customers) {
-            console.error('Invalid data structure received:', data);
-            return null;
-        }
-
-        const hasValidCoordinates = data.vehicles.some(v => v.coordX !== 0 || v.coordY !== 0) &&
-                                  data.customers.some(c => c.coordX !== 0 || c.coordY !== 0);
-        
-        if (!hasValidCoordinates) {
-            console.warn('Warning: All coordinates are zero. This might be incorrect data.');
-        }
-
-        lastUpdateTime = Date.now();
-        updateLastUpdateTime();
-        return data;
-    } catch (error) {
-        console.error('Error fetching scenario state:', error);
-        console.error('Error details:', {
-            message: error.message,
-            stack: error.stack
-        });
-        return null;
-    }
+    // Update last update time
+    updateLastUpdateTime();
 }
 
 function startUpdates() {
@@ -339,7 +307,7 @@ function startUpdates() {
             updateMap(state);
             updateStats(state);
         }
-    }, 1000);
+    }, 300);
 }
 
 function stopUpdates() {
@@ -360,111 +328,6 @@ function updateUI(running) {
         runButton.classList.remove('running');
     }
 }
-
-async function startScenario() {
-    try {
-        console.log('Starting scenario:', currentScenarioId);
-        
-        // First check the current state
-        const currentState = await getScenarioState();
-        
-        if (!currentState) {
-            throw new Error('Could not fetch scenario state');
-        }
-
-        console.log('Current scenario status:', currentState.status);
-
-        if (currentState.status === 'RUNNING') {
-            console.log('Scenario is already running, just starting updates');
-            simulationRunning = true;
-            startUpdates();
-            updateUI(true);
-            return;
-        }
-
-        // Only try to initialize if not already running
-        const response = await fetch(`/run/${currentScenarioId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        console.log('Start scenario response:', response.status);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error response body:', errorText);
-            
-            // If the scenario is already running, continue anyway
-            if (response.status === 400 && currentState.status === 'RUNNING') {
-                console.log('Scenario appears to be running despite 400 error, continuing...');
-                simulationRunning = true;
-                startUpdates();
-                updateUI(true);
-                return;
-            }
-            
-            throw new Error(`Failed to start scenario: ${response.status}`);
-        }
-        
-        simulationRunning = true;
-        startUpdates();
-        updateUI(true);
-    } catch (error) {
-        console.error('Error starting scenario:', error);
-        updateUI(false);
-    }
-}
-
-async function stopScenario() {
-    console.log('Stopping scenario');
-    stopUpdates();
-    updateUI(false);
-    simulationRunning = false;
-}
-
-// Initialize event listeners
-// Modify the initial state check in the DOMContentLoaded event listener
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing event listeners');
-    
-    const runButton = document.querySelector('.run-scenario');
-    if (!runButton) {
-        console.error('Run button not found in DOM');
-        return;
-    }
-    
-    runButton.disabled = false;
-    
-    runButton.addEventListener('click', async function() {
-        console.log('Run button clicked. Current simulation state:', simulationRunning);
-        if (!simulationRunning) {
-            await startScenario();
-        } else {
-            await stopScenario();
-        }
-    });
-
-    // Initial state check
-    getScenarioState().then(state => {
-        if (state) {
-            console.log('Initial state received:', state);
-            updateMap(state);
-            updateStats(state);
-            
-            // Update UI based on current state
-            if (state.status === 'RUNNING') {
-                console.log('Scenario is already running, but updates not started');
-                // Don't auto-start updates, but show correct button state
-                simulationRunning = false;
-                updateUI(false);
-            }
-        }
-    }).catch(error => {
-        console.error('Error getting initial state:', error);
-    });
-});
 
 
 // Add the legend
@@ -489,5 +352,95 @@ legend.onAdd = function(map) {
     return div;
 };
 legend.addTo(map);
+
+// Add new functions for scenario handling
+async function loadScenarios() {
+    try {
+        const response = await fetch('/scenarios');
+        const scenarios = await response.json();
+        
+        const select = document.getElementById('scenarioSelect');
+        select.innerHTML = '<option value="">Select a scenario...</option>';
+        
+        scenarios.forEach(scenario => {
+            const option = document.createElement('option');
+            option.value = scenario.id;
+            option.textContent = `Scenario ${scenario.id}`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Failed to load scenarios:', error);
+    }
+}
+
+async function runScenario(scenarioId) {
+    try {
+        const response = await fetch(`/run/${scenarioId}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) throw new Error('Failed to start scenario');
+        
+        simulationRunning = true;
+        currentScenarioId = scenarioId;
+        updateUI(true);
+        startUpdates();
+    } catch (error) {
+        console.error('Error running scenario:', error);
+    }
+}
+
+async function stopScenario() {
+    try {
+        if (!currentScenarioId) return;
+        
+        const response = await fetch(`/stop/${currentScenarioId}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) throw new Error('Failed to stop scenario');
+        
+        simulationRunning = false;
+        currentScenarioId = null;
+        updateUI(false);
+        stopUpdates();
+    } catch (error) {
+        console.error('Error stopping scenario:', error);
+    }
+}
+
+async function getScenarioState() {
+    try {
+        if (!currentScenarioId) return null;
+        
+        const response = await fetch(`/scenario/${currentScenarioId}`);
+        if (!response.ok) throw new Error('Failed to get scenario state');
+        
+        lastUpdateTime = Date.now();
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting scenario state:', error);
+        return null;
+    }
+}
+
+// Add event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    loadScenarios();
+    
+    const runButton = document.querySelector('.run-scenario');
+    runButton.addEventListener('click', async () => {
+        if (simulationRunning) {
+            await stopScenario();
+        } else {
+            const scenarioId = document.getElementById('scenarioSelect').value;
+            if (!scenarioId) {
+                alert('Please select a scenario first');
+                return;
+            }
+            await runScenario(scenarioId);
+        }
+    });
+});
 </script>
 {% endblock %}
