@@ -1,19 +1,25 @@
 #include "TreeGenerator.h"
-#include <iostream>
 #include <chrono>
+#include <iostream>
 
 int main() {
-    // Start timer
-    auto start_time = std::chrono::high_resolution_clock::now();
+    // Create a timer
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // Create an instance of TreeGenerator
+    TreeGenerator generator;
     
-    printf("start\n");
-    auto trees = TreeGenerator::generateTrees(123455);
-    printf("done\n");
-    
-    // End timer and calculate duration
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    
-    printf("Execution time: %lld milliseconds\n", duration.count());
+    // Call generateTrees on the instance
+    auto trees = generator.generateTrees(123455);
+
+    // Stop timer and calculate duration
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    // Print execution time (fixing the format specifier)
+    printf("Execution time: %ld milliseconds\n", duration.count());
+    // Or use cout:
+    // std::cout << "Execution time: " << duration.count() << " milliseconds\n";
+
     return 0;
 }

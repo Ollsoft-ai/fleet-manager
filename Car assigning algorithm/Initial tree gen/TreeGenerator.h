@@ -5,11 +5,20 @@
 
 class TreeGenerator {
 public:
-    static double getWeight(const Customer& custPrev, const Customer& custNext);
-    static const std::vector<Customer>& makeChildren(std::shared_ptr<TreeNode> root, 
-                           const Customer& currCust,
-                           const std::vector<Customer>& remainingCust,
-                           int depth);
-    static std::map<std::string, std::shared_ptr<TreeNode>> generateTrees(int scenarioId);
-    static void printTree(std::shared_ptr<TreeNode> node, std::string prefix = "");
+    std::map<std::string, std::shared_ptr<TreeNode>> generateTrees(int scenarioId);
+
+private:
+    void printTree(std::shared_ptr<TreeNode> node, std::string prefix = "");
+    float getWeight(const Customer& custPrev, const Customer& custNext);
+    float getWeightVehicle(double vehicleX, double vehicleY, const Customer& custNext);
+    double getDistance(double x1, double y1, double x2, double y2);
+    void makeChildren(std::shared_ptr<TreeNode> root,
+                     const Customer& currCust,
+                     std::vector<Customer>& remainingCust,
+                     int depth);
+    void makeChildrenVehicle(std::shared_ptr<TreeNode> root,
+                     const double vehicleX,
+                     const double vehicleY,
+                     std::vector<Customer>& remainingCust,
+                     int depth);
 };
