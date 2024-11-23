@@ -9,7 +9,7 @@ from redis import Redis
 
 BASE_URL_RUNNER = "http://scenariorunner:8090"
 BASE_URL_BACKEND = "http://backend:8080"
-SIMULATION_SPEED = 0.001
+SIMULATION_SPEED = 0.005
 
 # Add this to store active scenario tasks
 active_scenarios = {}
@@ -104,10 +104,13 @@ def scenario(scenario_id):
     
     current_scenario_state = response.json()
 
-    # Get metadata from Redis
+    # Get metadata from Redis and decode it properly
     metadata = redis_client.get(f"scenario_metadata:{scenario_id}")
-        
-    current_scenario_state['metadata'] = metadata
+    if metadata:
+        # Decode bytes to string and parse JSON
+        current_scenario_state['metadata'] = json.loads(metadata.decode('utf-8'))
+    else:
+        current_scenario_state['metadata'] = None
 
     return current_scenario_state
 
