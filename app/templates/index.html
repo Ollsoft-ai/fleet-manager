@@ -1,9 +1,71 @@
 {% extends 'base.html' %}
 
-{% block title %}Ollsoft.ai{% endblock %}
+{% block title %}Scenario Monitor{% endblock %}
 
 {% block content %}
 <div class="container mx-auto mt-10">
-    <h1 class="text-4xl font-bold">Hello</h1>
+    <h1 class="text-4xl font-bold">Scenario Monitor</h1>
+    
+    <div class="mt-8">
+        <div class="mb-4">
+            <label>Scenario ID:</label>
+            <input type="text" 
+                   id="scenarioId" 
+                   value="30405e73-ba0b-47f9-8571-f5cd60f441b1"
+                   class="w-full p-2 border rounded">
+        </div>
+
+        <button onclick="initializeScenario()" 
+                class="bg-blue-500 text-white px-4 py-2 rounded">
+            Initialize Scenario
+        </button>
+
+        <div class="mt-6">
+            <h2>Status:</h2>
+            <pre id="statusDisplay" class="bg-gray-100 p-4 mt-2 rounded">
+                Waiting to initialize...
+            </pre>
+        </div>
+    </div>
 </div>
-{% endblock %} 
+
+<script>
+    let pollTimeout;
+    const statusDisplay = document.getElementById('statusDisplay');
+
+    function initializeScenario() {
+        const scenarioId = document.getElementById('scenarioId').value.trim();
+        
+        if (pollTimeout) {
+            clearTimeout(pollTimeout);
+        }
+
+        // Make a single request to check status
+        fetch(`http://localhost:8080/scenarios/${scenarioId}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            },
+            credentials: 'omit',  // Don't send credentials
+            mode: 'cors'  // Explicit CORS mode
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();  // Get response as text first
+        })
+        .then(text => {
+            try {
+                const data = JSON.parse(text);  // Try to parse as JSON
+                statusDisplay.textContent = JSON.stringify(data, null, 2);
+            } catch (e) {
+                statusDisplay.textContent = text;  // Show as plain text if not JSON
+            }
+        })
+        .catch(error => {
+            statusDisplay.textContent = 'Error: ' + error.message;
+        });
+    }
+</script>
+{% endblock %}
