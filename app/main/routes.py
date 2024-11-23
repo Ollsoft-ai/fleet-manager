@@ -19,7 +19,8 @@ redis_client = Redis(host='redis', port=6379, db=0)
 
 @main.route('/')
 def index():
-    return render_template('index.html')
+    # redirect to map
+    return redirect(url_for('main.map'))
 
 @main.route("/scenarios", methods=['GET']) # first you get scenario id from this
 def scenarios():
