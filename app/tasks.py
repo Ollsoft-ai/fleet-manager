@@ -172,21 +172,11 @@ def update_scenario_metadata(scenario_id, scenario_state):
             }
         }
     })
-    print("redis metadata updated")
+
     # Store updated metadata in Redis
     redis_client.set(f"scenario_metadata:{scenario_id}", json.dumps(metadata))
 
-@celery.task(bind=True)
-def run_scenario_controller(self, scenario_id):
-    """Background task that runs the scenario controller algorithm with precomputed assignments"""
-    # Initialize metadata
-    metadata = {
-        'start_time': datetime.now().isoformat(),
-        'vehicle_assignments': {},
-        'realtime_positions': {}
-    }
-    redis_client.set(f"scenario_metadata:{scenario_id}", json.dumps(metadata))
-    
+def run_optimized_scenario_controller(scenario_id):
     # Track current vehicle-customer assignments
     current_assignments = {}  # vehicle_id -> customer_id
 
@@ -224,3 +214,21 @@ def run_scenario_controller(self, scenario_id):
             print(f"Assigned customer {customer['id']} to vehicle {vehicle['id']}")
             
         time.sleep(0.005)  # Short sleep to prevent overwhelming the system
+
+@celery.task(bind=True)
+def run_scenario_controller(self, scenario_id, algorithm="optimized"):
+    """Background task that runs the scenario controller algorithm with precomputed assignments"""
+    # Initialize metadata
+    metadata = {
+        'start_time': datetime.now().isoformat(),
+        'vehicle_assignments': {},
+        'realtime_positions': {}
+    }
+    redis_client.set(f"scenario_metadata:{scenario_id}", json.dumps(metadata))
+
+    if (algorithm == "optimized"):
+        run_optimized_scenario_controller(scenario_id)
+    else:
+        run_optimized_scenario_controller(scenario_id)
+        
+    print("Scenario controller finished")
