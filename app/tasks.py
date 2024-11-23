@@ -4,6 +4,7 @@ from app.celery_app import celery
 import redis
 import json
 from datetime import datetime
+import random
 
 BASE_URL_RUNNER = "http://scenariorunner:8090"
 HEADERS = {'Content-Type': 'application/json'}
@@ -215,6 +216,59 @@ def run_optimized_scenario_controller(scenario_id):
             
         time.sleep(0.005)  # Short sleep to prevent overwhelming the system
 
+def run_naive_scenario_controller(scenario_id):
+    """Naive implementation that randomly assigns customers to available vehicles."""
+    current_assignments = {}  # vehicle_id -> customer_id
+
+    while True:
+        current_scenario_state = get_scenario_state(scenario_id)
+        
+        # Update metadata every loop iteration
+        update_scenario_metadata(scenario_id, current_scenario_state)
+        
+        # Update current assignments based on scenario state
+        for vehicle in current_scenario_state["vehicles"]:
+            vehicle_id = vehicle["id"]
+            if vehicle["customerId"] is None:
+                current_assignments.pop(vehicle_id, None)
+            else:
+                current_assignments[vehicle_id] = vehicle["customerId"]
+        
+        # Get available vehicles and customers
+        available_vehicles = [
+            v for v in current_scenario_state["vehicles"] 
+            if v["isAvailable"] 
+            and v["customerId"] is None 
+            and v["id"] not in current_assignments
+        ]
+        
+        available_customers = [
+            c for c in current_scenario_state["customers"]
+            if c["awaitingService"] 
+            and c["id"] not in current_assignments.values()
+        ]
+        
+        # Check if we're done
+        if not available_customers and all(
+            not c["awaitingService"] 
+            for c in current_scenario_state["customers"]
+        ):
+            # Update metadata one final time before ending
+            update_scenario_metadata(scenario_id, current_scenario_state)
+            print("No more customers waiting, ending simulation")
+            break
+            
+        # Randomly assign available customers to free vehicles
+        for vehicle in available_vehicles:
+            if available_customers:
+                customer = random.choice(available_customers)
+                update_vehicle_assignment(scenario_id, vehicle["id"], customer["id"])
+                current_assignments[vehicle["id"]] = customer["id"]
+                available_customers.remove(customer)
+                print(f"Randomly assigned customer {customer['id']} to vehicle {vehicle['id']}")
+                
+        time.sleep(0.005)  # Short sleep to prevent overwhelming the system
+
 @celery.task(bind=True)
 def run_scenario_controller(self, scenario_id, algorithm="optimized"):
     """Background task that runs the scenario controller algorithm with precomputed assignments"""
@@ -226,8 +280,11 @@ def run_scenario_controller(self, scenario_id, algorithm="optimized"):
     }
     redis_client.set(f"scenario_metadata:{scenario_id}", json.dumps(metadata))
 
+    print("Running scenario controller with algorithm: ", algorithm)
     if (algorithm == "optimized"):
         run_optimized_scenario_controller(scenario_id)
+    elif (algorithm == "naive"):
+        run_naive_scenario_controller(scenario_id)
     else:
         run_optimized_scenario_controller(scenario_id)
         
