@@ -8,12 +8,6 @@
     
     <!-- Overlay Elements -->
     <div class="map-overlays">
-        <!-- Title Overlay -->
-        <div class="title-overlay">
-            <h1 class="dashboard-title">Fleet Command Center</h1>
-            <div class="dashboard-subtitle">Real-Time Monitoring System</div>
-        </div>
-
         <!-- Stats Overlay -->
         <div class="stats-overlay">
             <div class="stat-item">
@@ -32,15 +26,6 @@
                 <div class="stat-info">
                     <div class="stat-value" id="vehicle-stats">0/0</div>
                     <div class="stat-label">Available Vehicles</div>
-                </div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-value" id="utilization-rate">0%</div>
-                    <div class="stat-label">Vehicle Utilization</div>
                 </div>
             </div>
             <div class="stat-item">
@@ -98,6 +83,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/leaflet-heat.js') }}"></script>
 <style>
     .custom-marker i {
         font-size: 14px;
@@ -287,11 +273,16 @@
         font-size: 12px;
         color: #666;
     }
+
+    .leaflet-heatmap-layer {
+        transition: opacity 0.5s ease-in-out !important;
+    }
 </style>
 
 <script>
 // Constants
 const MUNICH_CENTER = [48.137154, 11.576124]; // [lat, lng]
+
 const MUNICH_BOUNDS = {
     lat: { min: 48.0, max: 48.25 },
     lng: { min: 11.36, max: 11.79 }
@@ -408,18 +399,30 @@ function clearMap() {
 }
 
 function showSimulationEndDialog() {
-    // Get one final update before showing the dialog
     getScenarioState().then(finalState => {
         if (finalState) {
             updateMap(finalState);
             updateStats(finalState);
         }
         
+        clearMap();
+        
         document.getElementById('simulationEndDialog').style.display = 'flex';
         simulationRunning = false;
         currentScenarioId = null;
         updateUI(false);
         stopUpdates();
+        
+        // Add heatmap with 0 opacity first
+        map.addLayer(heatLayer);
+        const heatmapCanvas = document.querySelector('.leaflet-heatmap-layer');
+        if (heatmapCanvas) {
+            heatmapCanvas.style.opacity = '0';
+            // Force a reflow
+            heatmapCanvas.offsetHeight;
+            // Fade in
+            heatmapCanvas.style.opacity = '1';
+        }
     });
 }
 
@@ -696,12 +699,6 @@ function updateStats(data) {
         vehicleStats.textContent = `${availableVehicles}/${availableVehicles + takenVehicles}`;
     }
 
-    // Update utilization rate
-    const utilizationRate = document.getElementById('utilization-rate');
-    if (utilizationRate) {
-        utilizationRate.textContent = `${(metadata.vehicle_utilization_rate || 0).toFixed(1)}%`;
-    }
-
     // Update total distance
     const totalDistance = document.getElementById('total-distance');
     if (totalDistance) {
@@ -777,6 +774,17 @@ legend.onAdd = function(map) {
             <i class="fas fa-flag" style="color: #FF5722;"></i>
             <span>Customer Destination</span>
         </div>
+        <div class="legend-item">
+            <div style="
+                width: 20px;
+                height: 20px;
+                background: linear-gradient(to right, #87CEEB, #4CAF50, #FFC107, #FF5722, #E20074);
+                display: inline-block;
+                margin-right: 8px;
+                border-radius: 3px;
+            "></div>
+            <span>Demand Heatmap</span>
+        </div>
     `;
     return div;
 };
@@ -814,6 +822,16 @@ async function runScenario(scenarioId, algorithm = 'optimized') {
         currentScenarioId = scenarioId;
         updateUI(true);
         startUpdates();
+        
+        // Fade out heatmap
+        const heatmapCanvas = document.querySelector('.leaflet-heatmap-layer');
+        if (heatmapCanvas) {
+            heatmapCanvas.style.opacity = '0';
+            setTimeout(() => {
+                map.removeLayer(heatLayer);
+            }, 500); // Remove after fade completes
+        }
+        
     } catch (error) {
         console.error('Error running scenario:', error);
     }
@@ -834,6 +852,18 @@ async function stopScenario() {
         updateUI(false);
         stopUpdates();
         clearMap();
+        
+        // Add heatmap with fade in
+        map.addLayer(heatLayer);
+        const heatmapCanvas = document.querySelector('.leaflet-heatmap-layer');
+        if (heatmapCanvas) {
+            heatmapCanvas.style.opacity = '0';
+            // Force a reflow
+            heatmapCanvas.offsetHeight;
+            // Fade in
+            heatmapCanvas.style.opacity = '1';
+        }
+        
     } catch (error) {
         console.error('Error stopping scenario:', error);
     }
@@ -886,5 +916,126 @@ document.addEventListener('DOMContentLoaded', () => {
     optimizedButton.addEventListener('click', () => handleRunClick('optimized'));
     naiveButton.addEventListener('click', () => handleRunClick('naive'));
 });
+
+const HEATMAP_POINTS = [
+    // City Center (Marienplatz) - High intensity core
+    [48.137154, 11.576124, 1.0], // Center point
+    [48.136154, 11.575124, 0.95],
+    [48.138154, 11.577124, 0.95],
+    [48.137154, 11.577124, 0.9],
+    [48.136154, 11.576124, 0.9],
+    // Extended city center coverage
+    [48.135154, 11.574124, 0.8],
+    [48.139154, 11.578124, 0.8],
+    [48.137154, 11.573124, 0.8],
+    [48.138154, 11.579124, 0.8],
+    [48.134154, 11.575124, 0.7],
+    [48.140154, 11.577124, 0.7],
+    // Wide area coverage
+    [48.133154, 11.573124, 0.6],
+    [48.141154, 11.579124, 0.6],
+    [48.137154, 11.571124, 0.6],
+    [48.138154, 11.581124, 0.6],
+    [48.132154, 11.574124, 0.5],
+    [48.142154, 11.578124, 0.5],
+    
+    // Olympiapark area - Large high-intensity zone
+    [48.175626, 11.551809, 0.9], // Center point
+    [48.174626, 11.550809, 0.85],
+    [48.176626, 11.552809, 0.85],
+    [48.175626, 11.552809, 0.8],
+    [48.174626, 11.551809, 0.8],
+    // Extended Olympic area
+    [48.173626, 11.549809, 0.7],
+    [48.177626, 11.553809, 0.7],
+    [48.175626, 11.554809, 0.7],
+    [48.172626, 11.550809, 0.6],
+    [48.178626, 11.552809, 0.6],
+    // Wide area coverage
+    [48.171626, 11.548809, 0.5],
+    [48.179626, 11.554809, 0.5],
+    [48.175626, 11.556809, 0.5],
+    [48.170626, 11.549809, 0.4],
+    [48.180626, 11.553809, 0.4],
+    
+    // English Garden area - Ring around the park
+    // Western edge (Schwabing/Leopoldstraße)
+    [48.158843, 11.582024, 0.8],
+    [48.156843, 11.581024, 0.7],
+    [48.154843, 11.580024, 0.7],
+    [48.152843, 11.579024, 0.6],
+    // Southern edge (near Prinzregentenstraße)
+    [48.145580, 11.586766, 0.8],
+    [48.144580, 11.588766, 0.7],
+    [48.143580, 11.590766, 0.7],
+    [48.142580, 11.592766, 0.6],
+    // Eastern edge (Bogenhausen)
+    [48.152580, 11.602766, 0.8],
+    [48.154580, 11.603766, 0.7],
+    [48.156580, 11.604766, 0.7],
+    [48.158580, 11.605766, 0.6],
+    // Northern edge (near Tivolistraße)
+    [48.162580, 11.591766, 0.8],
+    [48.161580, 11.589766, 0.7],
+    [48.160580, 11.587766, 0.7],
+    [48.159580, 11.585766, 0.6],
+    
+    // Hauptbahnhof area - New high intensity zone
+    [48.140276, 11.558404, 0.9],
+    [48.141276, 11.559404, 0.85],
+    [48.139276, 11.557404, 0.85],
+    [48.142276, 11.560404, 0.8],
+    [48.138276, 11.556404, 0.8],
+    // Wide area coverage
+    [48.143276, 11.561404, 0.6],
+    [48.137276, 11.555404, 0.6],
+    [48.140276, 11.562404, 0.5],
+    [48.144276, 11.559404, 0.4],
+    [48.136276, 11.557404, 0.4],
+    
+    // Theresienwiese area - New medium-high intensity
+    [48.131935, 11.547561, 0.8],
+    [48.132935, 11.548561, 0.75],
+    [48.130935, 11.546561, 0.75],
+    [48.133935, 11.549561, 0.7],
+    [48.129935, 11.545561, 0.7],
+    // Wide area coverage
+    [48.134935, 11.550561, 0.5],
+    [48.128935, 11.544561, 0.5],
+    [48.131935, 11.551561, 0.4],
+    [48.135935, 11.548561, 0.3],
+    [48.127935, 11.546561, 0.3],
+    
+    // Allianz Arena area - High intensity zone
+    [48.218684, 11.624540, 0.9], // Center point
+    [48.219684, 11.625540, 0.85],
+    [48.217684, 11.623540, 0.85],
+    [48.218684, 11.625540, 0.8],
+    [48.219684, 11.624540, 0.8],
+    [48.217684, 11.624540, 0.8],
+    [48.218684, 11.623540, 0.8],
+    // Wide area coverage
+    [48.220684, 11.626540, 0.6],
+    [48.216684, 11.622540, 0.6],
+    [48.218684, 11.626540, 0.5],
+    [48.221684, 11.625540, 0.5],
+    [48.215684, 11.623540, 0.5],
+    [48.218684, 11.627540, 0.4],
+    [48.222684, 11.624540, 0.3],
+    [48.214684, 11.624540, 0.3]
+];
+
+const heatLayer = L.heatLayer(HEATMAP_POINTS, {
+    radius: 35,      // Back to original values
+    blur: 25,        // Back to original values
+    maxZoom: 15,
+    gradient: {
+        0.2: '#87CEEB',  // Light blue
+        0.4: '#4CAF50',  // Green
+        0.6: '#FFC107',  // Yellow
+        0.8: '#FF5722',  // Orange
+        1.0: '#E20074'   // T-Mobile magenta
+    }
+}).addTo(map);
 </script>
 {% endblock %}
