@@ -236,17 +236,47 @@ function updateLastUpdateTime() {
     }
 }
 
+
+function clearMap() {
+    // Clear all customer and vehicle markers
+    if (currentMarkers.size > 0) {
+        currentMarkers.forEach(marker => {
+            if (map.hasLayer(marker)) {
+                map.removeLayer(marker);
+            }
+        });
+        currentMarkers.clear();
+    }
+
+    // Clear all lines and destination markers
+    if (currentLines.size > 0) {
+        currentLines.forEach(lineObjects => {
+            if (map.hasLayer(lineObjects.line)) {
+                map.removeLayer(lineObjects.line);
+            }
+            if (map.hasLayer(lineObjects.marker)) {
+                map.removeLayer(lineObjects.marker);
+            }
+        });
+        currentLines.clear();
+    }
+
+    console.log('Cleared all markers and lines from the map.');
+}
+
 function showSimulationEndDialog() {
     document.getElementById('simulationEndDialog').style.display ='flex';
     simulationRunning = false;
-    currentScenarioId = null; 
+    currentScenarioId = null;
     updateUI(false);
     stopUpdates();
+    clearMap();
 }
 
 function closeSimulationEndDialog() {
     document.getElementById('simulationEndDialog').style.display = 'none';
 }
+
 
 function getPosition(coordX, coordY) { //smazat
     // Handle null or undefined coordinates
@@ -272,7 +302,10 @@ function getPosition(coordX, coordY) { //smazat
 }
 
 function updateMap(data) {
-    console.log('Updating map with new data:', data);
+    if (!simulationRunning) {
+        console.log('Update is skipped, simulation is not running.');
+        return;
+    }
 
     if (!data?.vehicles || !data?.customers) {
         console.error('Invalid data structure:', data);
@@ -287,7 +320,6 @@ function updateMap(data) {
         if (customer.awaitingService) {
             const [lat, lng] = getPosition(customer.coordX, customer.coordY);
             const [destLat, destLng] = getPosition(customer.destinationX, customer.destinationY);
-            console.log(`Customer ${customer.id} position:`, [lat, lng]);
 
             // Handle the line and destination marker
             if (!currentLines.has(lineId)) {
@@ -388,8 +420,8 @@ function updateMap(data) {
     const busyVehicleIds = new Set();
     data.vehicles.forEach(vehicle => {
         data.customers.forEach(customer => {
-            if (!customer.awaitingService && // customer is not waiting (being transported)
-                vehicle.coordX === customer.coordX && 
+            if (!customer.awaitingService &&
+                vehicle.coordX === customer.coordX &&
                 vehicle.coordY === customer.coordY) {
                 busyVehicleIds.add(vehicle.id);
             }
@@ -406,9 +438,9 @@ function updateMap(data) {
 
         // Handle assignment line
         const assignmentLineId = `assignment-${vehicle.id}`;
-        if (vehicle.customerId && !isOccupied) {
-            const assignedCustomer = data.customers.find(c => c.id === vehicle.customerId);
-            if (assignedCustomer && assignedCustomer.awaitingService) {
+        if (vehicle.customerId) {
+            const assignedCustomer = data.customers.find(c => c.id === vehicle.customerId && c.awaitingService);
+            if (assignedCustomer) {
                 const [customerLat, customerLng] = getPosition(assignedCustomer.coordX, assignedCustomer.coordY);
                 
                 if (!currentLines.has(assignmentLineId)) {
@@ -417,16 +449,21 @@ function updateMap(data) {
                         {
                             color: '#4CAF50',
                             weight: 2,
-                            opacity: 0.8,
-                            dashArray: '5, 10'
+                            opacity: 0.8
                         }
                     ).addTo(map);
                     currentLines.set(assignmentLineId, { line: assignmentLine });
                 } else {
-                    currentLines.get(assignmentLineId).line.setLatLngs([
+                    const line = currentLines.get(assignmentLineId).line;
+                    line.setLatLngs([
                         [boundedLat, boundedLng],
                         [customerLat, customerLng]
                     ]);
+                }
+            } else {
+                if (currentLines.has(assignmentLineId)) {
+                    map.removeLayer(currentLines.get(assignmentLineId).line);
+                    currentLines.delete(assignmentLineId);
                 }
             }
         } else {
@@ -442,7 +479,7 @@ function updateMap(data) {
             const vehicleMarker = L.marker([boundedLat, boundedLng], {
                 icon: L.divIcon({
                     html: `<div style="
-                        background-color: ${isOccupied ? '#00BCD4' : '#4CAF50'};
+                        background-color: '#4CAF50';
                         width: 36px;
                         height: 36px;
                         border-radius: 50%;
@@ -458,7 +495,7 @@ function updateMap(data) {
             vehicleMarker.bindPopup(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
-                    <span style="color: ${isOccupied ? '#00BCD4' : '#4CAF50'};">
+                    <span style="color: #4CAF50;">
                         ${isOccupied ? 'On trip with customer' : 'Available'}
                     </span><br>
                     <span style="color: #4a5568;">
@@ -472,11 +509,10 @@ function updateMap(data) {
         } else {
             const marker = currentMarkers.get(markerId);
             marker.setLatLng([boundedLat, boundedLng]);
-            
-            // Update the icon when status changes
+
             marker.setIcon(L.divIcon({
                 html: `<div style="
-                    background-color: ${isOccupied ? '#00BCD4' : '#4CAF50'};
+                    background-color: #4CAF50;
                     width: 36px;
                     height: 36px;
                     border-radius: 50%;
@@ -487,12 +523,11 @@ function updateMap(data) {
                 "><i class="fas fa-car-side"></i></div>`,
                 className: 'custom-marker'
             }));
-    
-            // Update the popup content
+
             marker.getPopup().setContent(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
-                    <span style="color: ${isOccupied ? '#00BCD4' : '#4CAF50'};">
+                    <span style="color: #4CAF50;">
                         ${isOccupied ? 'On trip with customer' : 'Available'}
                     </span><br>
                     <span style="color: #4a5568;">
@@ -549,7 +584,6 @@ function updateUI(running) {
         runButton.classList.remove('running');
     }
 }
-
 
 // Add the legend
 const legend = L.control({ position: 'bottomleft' });
@@ -629,6 +663,7 @@ async function stopScenario() {
         currentScenarioId = null;
         updateUI(false);
         stopUpdates();
+        clearMap();
     } catch (error) {
         console.error('Error stopping scenario:', error);
     }
