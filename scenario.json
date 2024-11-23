@@ -1,0 +1,150 @@
+{
+    "customers": [
+      {
+        "awaitingService": true,
+        "coordX": 48.156956,
+        "coordY": 11.595259,
+        "destinationX": 48.11479,
+        "destinationY": 11.641407,
+        "id": "346598de-8cc2-4033-9d46-3543233ebf4f"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.113026,
+        "coordY": 11.573777,
+        "destinationX": 48.122314,
+        "destinationY": 11.512079,
+        "id": "5c582504-e2f0-42e5-9b87-191532d49f61"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.116055,
+        "coordY": 11.635808,
+        "destinationX": 48.158867,
+        "destinationY": 11.536861,
+        "id": "e490f51b-6bc4-4120-8b83-5f697cf062c8"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.1244,
+        "coordY": 11.578378,
+        "destinationX": 48.12481,
+        "destinationY": 11.507304,
+        "id": "5b12be6d-c0f0-45b1-bcce-061f158e933c"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.146637,
+        "coordY": 11.538828,
+        "destinationX": 48.128666,
+        "destinationY": 11.641381,
+        "id": "aef65132-146a-4afd-861d-bff17ff8ba33"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.151817,
+        "coordY": 11.527302,
+        "destinationX": 48.153923,
+        "destinationY": 11.5654125,
+        "id": "2927f343-a226-4906-a28a-52a73b63df59"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.152412,
+        "coordY": 11.527346,
+        "destinationX": 48.134384,
+        "destinationY": 11.515041,
+        "id": "d3ffe4cb-d8c1-4af1-af01-550f90fc3eaf"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.122593,
+        "coordY": 11.575114,
+        "destinationX": 48.16091,
+        "destinationY": 11.56712,
+        "id": "754b5fec-dda6-4a8e-9f7e-187888b42a87"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.15628,
+        "coordY": 11.579052,
+        "destinationX": 48.142956,
+        "destinationY": 11.621298,
+        "id": "c93ce116-704b-4f12-a296-2347987dd831"
+      },
+      {
+        "awaitingService": true,
+        "coordX": 48.119633,
+        "coordY": 11.508648,
+        "destinationX": 48.113388,
+        "destinationY": 11.572373,
+        "id": "0d30e40d-f657-4bfe-a8ef-2547794a6672"
+      }
+    ],
+    "endTime": null,
+    "id": "8dc13b21-bc5f-46b1-a231-960d111314ad",
+    "startTime": "2024-11-23T09:36:55.137391",
+    "status": "RUNNING",
+    "vehicles": [
+      {
+        "activeTime": 0,
+        "coordX": 48.131714,
+        "coordY": 11.511594,
+        "customerId": null,
+        "distanceTravelled": 0,
+        "id": "60bd1634-fea3-44f4-ac30-4a32ee16050f",
+        "isAvailable": true,
+        "numberOfTrips": 0,
+        "remainingTravelTime": 0,
+        "vehicleSpeed": null
+      },
+      {
+        "activeTime": 0,
+        "coordX": 48.14971,
+        "coordY": 11.63585,
+        "customerId": null,
+        "distanceTravelled": 0,
+        "id": "e0abf8c3-13a9-40b2-8077-97cecefb68eb",
+        "isAvailable": true,
+        "numberOfTrips": 0,
+        "remainingTravelTime": 0,
+        "vehicleSpeed": null
+      },
+      {
+        "activeTime": 0,
+        "coordX": 48.120335,
+        "coordY": 11.610124,
+        "customerId": null,
+        "distanceTravelled": 0,
+        "id": "a984782f-5132-4d5d-866a-e111118aa167",
+        "isAvailable": true,
+        "numberOfTrips": 0,
+        "remainingTravelTime": 0,
+        "vehicleSpeed": null
+      },
+      {
+        "activeTime": 0,
+        "coordX": 48.157307,
+        "coordY": 11.532551,
+        "customerId": null,
+        "distanceTravelled": 0,
+        "id": "0200691d-4897-4d6d-94bf-53edeb954557",
+        "isAvailable": true,
+        "numberOfTrips": 0,
+        "remainingTravelTime": 0,
+        "vehicleSpeed": null
+      },
+      {
+        "activeTime": 0,
+        "coordX": 48.14263,
+        "coordY": 11.525234,
+        "customerId": null,
+        "distanceTravelled": 0,
+        "id": "3b078084-985a-4fa3-b161-3120f42a47c5",
+        "isAvailable": true,
+        "numberOfTrips": 0,
+        "remainingTravelTime": 0,
+        "vehicleSpeed": null
+      }
+    ]
+  }
