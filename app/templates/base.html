@@ -5,7 +5,6 @@
 </head>
 <body>
     {% block content %}{% endblock %}
-    {% include 'footer.html' %}
 
     {% if config.get('FLASK_ENV') == 'development' %}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/livereload/3.9.1/livereload.min.js"></script>

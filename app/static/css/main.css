@@ -7,3 +7,359 @@
   .custom-transition {
     transition: all 0.3s ease-in-out;
   }
+
+  .main-content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    padding: 0; /* Remove padding */
+}
+#map { 
+  height: 100%; 
+  width: 100%;
+  margin: 0; /* Remove margin */
+  border-radius: 0; /* Remove border radius */
+  box-shadow: none; /* Remove shadow */
+}
+.map-overlays {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none; /* Allows clicking through to map */
+  z-index: 1000;
+}
+
+/* Title overlay */
+.title-overlay {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  pointer-events:auto;
+}
+
+.dashboard-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--tmobile-dark);
+  margin: 0;
+  background: linear-gradient(45deg, var(--tmobile-dark), var(--tmobile-magenta));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashboard-subtitle {
+  font-size: 0.875rem;
+  color: var(--tmobile-gray);
+  margin-top: 0.25rem;
+}
+
+/* Stats overlay */
+.stats-overlay {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 1rem;
+  pointer-events: auto;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Controls overlay */
+.controls-overlay {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%); 
+  margin-left: calc(var(--sidebar-width) / 2); 
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+
+.scenario-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.legend {
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+.legend-color {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    border-radius: 50%;
+}
+.custom-marker {
+    background: none;
+    border: none;
+}
+.dashboard-header {
+  padding: 1.5rem 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.title-section {
+  position: relative;
+}
+
+.dashboard-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--tmobile-dark);
+  margin: 0;
+  letter-spacing: -0.5px;
+  background: linear-gradient(45deg, var(--tmobile-dark), var(--tmobile-magenta));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  position: relative;
+}
+
+.dashboard-subtitle {
+  font-size: 0.875rem;
+  color: var(--tmobile-gray);
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.header-stats {
+  display: flex;
+  gap: 2rem;
+  margin-left: 3rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.stat-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(226, 0, 116, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tmobile-magenta);
+  font-size: 1rem;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--tmobile-dark);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--tmobile-gray);
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+
+/* Animation for Live status */
+.stat-item:last-child .stat-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-item:last-child .stat-value::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--success-color);
+  border-radius: 50%;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0% { 
+      transform: scale(1);
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.4);
+  }
+  50% { 
+      transform: scale(1.1);
+      opacity: 0.8;
+      box-shadow: 0 0 0 6px rgba(0, 200, 83, 0);
+  }
+  100% { 
+      transform: scale(1);
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(0, 200, 83, 0);
+  }
+}
+.scenario-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.scenario-select {
+  height: 42px;
+  padding: 0 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  background-color: white;
+  color: var(--tmobile-dark);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 200px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: calc(100% - 1rem) center;
+  padding-right: 2.5rem;
+}
+
+.scenario-select:hover {
+  border-color: var(--tmobile-magenta);
+}
+
+.scenario-select:focus {
+  outline: none;
+  border-color: var(--tmobile-magenta);
+  box-shadow: 0 0 0 3px rgba(226, 0, 116, 0.1);
+}
+
+
+/* Separate action button styles */
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  height: 42px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: white;
+  border-radius: 10px;
+  color: var(--tmobile-dark);
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  background: rgba(0, 0, 0, 0.02);
+  transform: translateY(-1px);
+}
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+
+.action-button,
+.run-scenario {
+  height: 42px;
+  padding: 0 1.5rem;
+  background-color: var(--tmobile-magenta);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+/* Export button specific styles */
+.action-button {
+  background-color: var(--tmobile-magenta) !important;
+  color: white !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.action-button:hover {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+  transform: translateY(-1px);
+}
+
+
+.run-scenario:hover {
+  background-color: var(--tmobile-magenta) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(226, 0, 116, 0.2);
+}
+
+.run-scenario:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.run-scenario i {
+  transition: transform 0.2s ease;
+}
+
+
+.run-scenario:hover:not(:disabled) {
+  background-color: var(--tmobile-magenta-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(226, 0, 116, 0.2);
+}
+.run-scenario:hover:not(:disabled) i {
+  transform: translateX(2px);
+}

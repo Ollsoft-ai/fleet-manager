@@ -124,6 +124,11 @@ def scenario(scenario_id):
 
     return current_scenario_state
 
+    
+@main.route('/map')
+def map():
+    return render_template('map.html')
+
 #@main.app_context_processor
 #def inject_conf_var():
 #    return dict(
