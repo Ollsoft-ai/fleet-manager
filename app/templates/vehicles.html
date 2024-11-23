@@ -1,9 +1,634 @@
 {% extends 'base.html' %}
 
-{% block title %}TITLE{% endblock %}
-
 {% block content %}
 {% include 'sidebar.html' %}
 
-CONTENT
+<style>
+    .vehicle-management-container {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        padding: 2rem;
+        background-color: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .vehicle-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .vehicle-page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .vehicle-add-button {
+        padding: 0.75rem 1.5rem;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background-color 0.2s;
+    }
+
+    .vehicle-add-button:hover {
+        background: #388E3C;
+    }
+
+    .vehicle-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .vehicle-stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .vehicle-stat-card:hover {
+        transform: scale(1.05); 
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .vehicle-stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .vehicle-stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(76, 175, 80, 0.1);
+        color: #4CAF50;
+    }
+
+    .vehicle-stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.25rem;
+    }
+
+    .vehicle-stat-label {
+        color: #666;
+        font-size: 0.875rem;
+    }
+
+    .vehicle-filters-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .vehicle-filters-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+
+    .vehicle-filter-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: border-color 0.2s;
+    }
+
+    .vehicle-filter-input:focus {
+        outline: none;
+        border-color: #4CAF50;
+    }
+
+    .vehicle-table-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .vehicle-data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .vehicle-data-table th,
+    .vehicle-data-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .vehicle-data-table th {
+        font-weight: 500;
+        color: #666;
+        background: #fafafa;
+    }
+
+    .vehicle-data-table tr:hover {
+        background: #fafafa;
+    }
+
+    .vehicle-status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .vehicle-status-active {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4CAF50;
+    }
+
+    .vehicle-status-maintenance {
+        background: rgba(255, 152, 0, 0.1);
+        color: #f57c00;
+    }
+
+    .vehicle-status-charging {
+        background: rgba(33, 150, 243, 0.1);
+        color: #1976d2;
+    }
+
+    .vehicle-action-icon {
+        cursor: pointer;
+        color: #666;
+        margin-right: 10px;
+        transition: color 0.2s;
+    }
+
+    .vehicle-action-icon:hover {
+        color: #4CAF50;
+    }
+
+    @media (max-width: 1200px) {
+        .vehicle-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .vehicle-filters-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .vehicle-management-container {
+            margin-left: 0;
+        }
+        
+        .vehicle-stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .vehicle-filters-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    /* Add to your CSS */
+.vehicle-range-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.vehicle-range-bar {
+    flex: 1;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.vehicle-range-fill {
+    position: absolute;
+    height: 100%;
+    left: 0;
+    top: 0;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.vehicle-range-high {
+    background: #4CAF50;
+}
+
+.vehicle-range-medium {
+    background: #FFC107;
+}
+
+.vehicle-range-low {
+    background: #FF5722;
+}
+
+.vehicle-range-text {
+    min-width: 70px;
+    font-size: 0.875rem;
+    color: #666;
+}
+</style>
+
+<div class="vehicle-management-container">
+    <!-- Header -->
+    <div class="vehicle-page-header">
+        <h1 class="vehicle-page-title">Vehicle Management</h1>
+        <button class="vehicle-add-button">
+            <i class="fas fa-plus"></i> Add Vehicle
+        </button>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="vehicle-stats-grid">
+        <div class="vehicle-stat-card">
+            <div class="vehicle-stat-header">
+                <div class="vehicle-stat-icon">
+                    <i class="fas fa-car"></i>
+                </div>
+            </div>
+            <div class="vehicle-stat-value">125</div>
+            <div class="vehicle-stat-label">Total Vehicles</div>
+        </div>
+        <div class="vehicle-stat-card">
+            <div class="vehicle-stat-header">
+                <div class="vehicle-stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="vehicle-stat-value">98</div>
+            <div class="vehicle-stat-label">Active Vehicles</div>
+        </div>
+        <div class="vehicle-stat-card">
+            <div class="vehicle-stat-header">
+                <div class="vehicle-stat-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+            </div>
+            <div class="vehicle-stat-value">15</div>
+            <div class="vehicle-stat-label">In Maintenance</div>
+        </div>
+        <div class="vehicle-stat-card">
+            <div class="vehicle-stat-header">
+                <div class="vehicle-stat-icon">
+                    <i class="fas fa-battery-three-quarters"></i>
+                </div>
+            </div>
+            <div class="vehicle-stat-value">12</div>
+            <div class="vehicle-stat-label">Charging</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="vehicle-filters-section">
+        <div class="vehicle-filters-grid">
+            <input type="text" class="vehicle-filter-input" placeholder="Search by plate number...">
+            <select class="vehicle-filter-input">
+                <option value="">Vehicle Status</option>
+                <option value="active">Active</option>
+                <option value="maintenance">In Maintenance</option>
+                <option value="charging">Charging</option>
+            </select>
+            <select class="vehicle-filter-input">
+                <option value="">Vehicle Type</option>
+                <option value="sedan">Sedan</option>
+                <option value="suv">SUV</option>
+                <option value="van">Van</option>
+            </select>
+            <select class="vehicle-filter-input">
+                <option value="">Sort By</option>
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="range">Range: High to Low</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="vehicle-table-container">
+        <table class="vehicle-data-table">
+            <thead>
+                <tr>
+                    <th>Plate Number</th>
+                    <th>Vehicle Type</th>
+                    <th>Status</th>
+                    <th>Battery Range</th>
+                    <th>Last Location</th>
+                    <th>Last Service</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>M-EV 1234</td>
+                    <td>Tesla Model Y</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-high" style="width: 78%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">312 km</span>
+                        </div>
+                    </td>
+                    <td>Karlsplatz</td>
+                    <td>2024-01-15</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 5678</td>
+                    <td>BMW i4</td>
+                    <td><span class="vehicle-status-badge vehicle-status-maintenance">Maintenance</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-medium" style="width: 45%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">285 km</span>
+                        </div>
+                    </td>
+                    <td>Hauptbahnhof</td>
+                    <td>2024-02-01</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 9012</td>
+                    <td>Mercedes EQS</td>
+                    <td><span class="vehicle-status-badge vehicle-status-charging">Charging</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-medium" style="width: 45%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">465 km</span>
+                        </div>
+                    </td>
+                    <td>Marienplatz</td>
+                    <td>2024-01-28</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 3456</td>
+                    <td>Audi e-tron</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-high" style="width: 99%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">821 km</span>
+                        </div>
+                    </td>
+                    <td>Odeonsplatz</td>
+                    <td>2024-01-20</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 7890</td>
+                    <td>VW ID.4</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-low" style="width: 15%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">98 km</span>
+                        </div>
+                    </td>
+                    <td>Sendlinger Tor</td>
+                    <td>2024-01-25</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 4321</td>
+                    <td>Polestar 2</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-high" style="width: 88%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">450 km</span>
+                        </div>
+                    </td>
+                    <td>Leopoldstraße</td>
+                    <td>2024-02-10</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 6543</td>
+                    <td>Nissan Leaf</td>
+                    <td><span class="vehicle-status-badge vehicle-status-maintenance">Maintenance</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-low" style="width: 30%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">200 km</span>
+                        </div>
+                    </td>
+                    <td>Isartor</td>
+                    <td>2024-02-15</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 8765</td>
+                    <td>Kia EV6</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-high" style="width: 95%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">510 km</span>
+                        </div>
+                    </td>
+                    <td>Olympiapark</td>
+                    <td>2024-02-20</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 3210</td>
+                    <td>Hyundai Ioniq 5</td>
+                    <td><span class="vehicle-status-badge vehicle-status-charging">Charging</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-medium" style="width: 60%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">320 km</span>
+                        </div>
+                    </td>
+                    <td>Theresienwiese</td>
+                    <td>2024-01-30</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 1098</td>
+                    <td>Jaguar I-PACE</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-medium" style="width: 55%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">470 km</span>
+                        </div>
+                    </td>
+                    <td>Gärtnerplatz</td>
+                    <td>2024-01-18</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 2109</td>
+                    <td>Chevrolet Bolt EV</td>
+                    <td><span class="vehicle-status-badge vehicle-status-maintenance">Maintenance</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-low" style="width: 25%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">300 km</span>
+                        </div>
+                    </td>
+                    <td>Schwabing</td>
+                    <td>2024-01-22</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 9876</td>
+                    <td>Porsche Taycan</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-high" style="width: 85%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">600 km</span>
+                        </div>
+                    </td>
+                    <td>Maximilianstraße</td>
+                    <td>2024-01-25</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 6547</td>
+                    <td>Lucid Air</td>
+                    <td><span class="vehicle-status-badge vehicle-status-charging">Charging</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-medium" style="width: 70%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">720 km</span>
+                        </div>
+                    </td>
+                    <td>Garching</td>
+                    <td>2024-02-05</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 8901</td>
+                    <td>Renault Zoe</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-low" style="width: 40%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">300 km</span>
+                        </div>
+                    </td>
+                    <td>Sendlinger Straße</td>
+                    <td>2024-01-28</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <td>M-EV 5679</td>
+                    <td>Rivian R1T</td>
+                    <td><span class="vehicle-status-badge vehicle-status-active">Active</span></td>
+                    <td>
+                        <div class="vehicle-range-wrapper">
+                            <div class="vehicle-range-bar">
+                                <div class="vehicle-range-fill vehicle-range-high" style="width: 80%;"></div>
+                            </div>
+                            <span class="vehicle-range-text">480 km</span>
+                        </div>
+                    </td>
+                    <td>Freimann</td>
+                    <td>2024-02-12</td>
+                    <td>
+                        <i class="fas fa-edit vehicle-action-icon"></i>
+                        <i class="fas fa-trash-alt vehicle-action-icon"></i>
+                    </td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {% endblock %}
