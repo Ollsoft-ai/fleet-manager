@@ -236,6 +236,48 @@ function updateLastUpdateTime() {
     }
 }
 
+// Function to fetch the initial state of a scenario from the template endpoint
+async function fetchScenarioTemplate(scenarioId) {
+    try {
+        const response = await fetch(`/scenario_template/${scenarioId}`);
+        if (!response.ok) throw new Error('Failed to fetch scenario template');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching scenario template:', error);
+        return null;
+    }
+}
+
+// Event listener for scenario selection change
+async function handleScenarioSelection(event) {
+    const scenarioId = event.target.value;
+
+    // Clear the map first
+    clearMap();
+
+    if (!scenarioId) {
+        console.log('No scenario selected');
+        return;
+    }
+
+    // Fetch the scenario template data
+    const scenarioData = await fetchScenarioTemplate(scenarioId);
+
+    if (scenarioData) {
+        // Update the map and stats with the template data
+        updateMap(scenarioData, true);
+        updateStats(scenarioData);
+    } else {
+        console.error('No data available for the selected scenario');
+    }
+}
+
+// Add the event listener to the scenario selection dropdown
+document.addEventListener('DOMContentLoaded', () => {
+    const scenarioSelect = document.getElementById('scenarioSelect');
+    scenarioSelect.addEventListener('change', handleScenarioSelection);
+});
 
 function clearMap() {
     // Clear all customer and vehicle markers
@@ -301,8 +343,8 @@ function getPosition(coordX, coordY) { //smazat
     return [boundedLat, boundedLng];
 }
 
-function updateMap(data) {
-    if (!simulationRunning) {
+function updateMap(data, ignoreFlagington=false) {
+    if (!simulationRunning && !ignoreFlagington) {
         console.log('Update is skipped, simulation is not running.');
         return;
     }
@@ -479,7 +521,7 @@ function updateMap(data) {
             const vehicleMarker = L.marker([boundedLat, boundedLng], {
                 icon: L.divIcon({
                     html: `<div style="
-                        background-color: '#4CAF50';
+                        background-color: #4CAF50;
                         width: 36px;
                         height: 36px;
                         border-radius: 50%;
@@ -495,13 +537,6 @@ function updateMap(data) {
             vehicleMarker.bindPopup(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
-                    <span style="color: #4CAF50;">
-                        ${isOccupied ? 'On trip with customer' : 'Available'}
-                    </span><br>
-                    <span style="color: #4a5568;">
-                        ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
-                        Position: [${lat.toFixed(6)}, ${lng.toFixed(6)}]
-                    </span>
                 </div>
             `);
 
@@ -527,13 +562,6 @@ function updateMap(data) {
             marker.getPopup().setContent(`
                 <div style="font-family: 'Inter', sans-serif; font-size: 12px;">
                     <strong style="color: #1a1a1a;">Vehicle ${vehicle.id}</strong><br>
-                    <span style="color: #4CAF50;">
-                        ${isOccupied ? 'On trip with customer' : 'Available'}
-                    </span><br>
-                    <span style="color: #4a5568;">
-                        ${vehicle.numberOfTrips} trips · ${vehicle.distanceTravelled.toFixed(1)} km<br>
-                        Position: [${lat.toFixed(6)}, ${lng.toFixed(6)}]
-                    </span>
                 </div>
             `);
         }
@@ -598,10 +626,6 @@ legend.onAdd = function(map) {
         <div class="legend-item">
             <i class="fas fa-car-side" style="color: #4CAF50;"></i>
             <span>Available Vehicle</span>
-        </div>
-        <div class="legend-item">
-            <i class="fas fa-car-side" style="color: #00BCD4;"></i>
-            <span>Vehicle with Customer</span>
         </div>
         <div class="legend-item">
             <i class="fas fa-flag" style="color: #FF5722;"></i>
