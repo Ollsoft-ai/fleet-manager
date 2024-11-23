@@ -7,3 +7,4 @@ celery
 redis
 anytree
 numpy
+pybind11>=2.10.0
