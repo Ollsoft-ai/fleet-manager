@@ -21,4 +21,5 @@ private:
                      const double vehicleY,
                      std::vector<Customer>& remainingCust,
                      int depth);
+    TreeNode makeVehicleTree();
 };
