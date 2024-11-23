@@ -1,0 +1,15 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "TSI Database",
+            "Group": "Servers",
+            "Host": "postgres",
+            "Port": 5432,
+            "MaintenanceDB": "tsi",
+            "Username": "user",
+            "Password": "password",
+            "SSLMode": "prefer",
+            "SavePassword": true
+        }
+    }
+} 

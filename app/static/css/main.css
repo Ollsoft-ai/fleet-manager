@@ -1,0 +1,9 @@
+/* Custom styles */
+:root {
+    --primary-color: #3b82f6;
+    --secondary-color: #1e40af;
+  }
+  
+  .custom-transition {
+    transition: all 0.3s ease-in-out;
+  }

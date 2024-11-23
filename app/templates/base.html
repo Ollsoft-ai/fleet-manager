@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% include 'header.html' %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    {% include 'footer.html' %}
+
+    {% if config.get('FLASK_ENV') == 'development' %}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/livereload/3.9.1/livereload.min.js"></script>
+    {% endif %}
+</body>
+</html> 
