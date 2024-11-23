@@ -5,3 +5,5 @@ livereload
 requests
 celery
 redis
+anytree
+numpy
