@@ -2,65 +2,119 @@
 #include "CustomerGenerator.h"
 #include <cmath>
 #include <iostream>
-#include <algorithm>  // Add this for copy_if
-
+#include <algorithm>
 
 void TreeGenerator::printTree(std::shared_ptr<TreeNode> node, std::string prefix) {
-    std::cout << prefix << node->name << std::endl;
+    if (!node) return;
+    std::cout << prefix << node->name << " " << node->weight << std::endl;
     for (const auto& child : node->children) {
         printTree(child, prefix + "  ");
     }
 }
 
-double TreeGenerator::getWeight(const Customer& custPrev, const Customer& custNext) {
-    double dx = custPrev.destinationX - custNext.coordX;
-    double dy = custPrev.destinationY - custNext.coordY;
+float TreeGenerator::getWeight(const Customer& custPrev, const Customer& custNext) {
+    float dx = custPrev.destinationX - custNext.coordX;
+    float dy = custPrev.destinationY - custNext.coordY;
     return std::sqrt(dx * dx + dy * dy);
 }
 
-// Helper function to get distance between two points
-double getDistance(double x1, double y1, double x2, double y2) {
+float TreeGenerator::getWeightVehicle(double vehicleX, double vehicleY, const Customer& custNext) {
+    float dx = vehicleX - custNext.coordX;
+    float dy = vehicleY - custNext.coordY;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+double TreeGenerator::getDistance(double x1, double y1, double x2, double y2) {
     double dx = x2 - x1;
     double dy = y2 - y1;
     return std::sqrt(dx * dx + dy * dy);
 }
 
-const std::vector<Customer>& TreeGenerator::makeChildren(std::shared_ptr<TreeNode> root,
+void TreeGenerator::makeChildren(std::shared_ptr<TreeNode> root,
                                const Customer& currCust,
-                               const std::vector<Customer>& remainingCust,
+                               std::vector<Customer>& remainingCust,
                                int depth) {
-    if (remainingCust.empty() || depth >= 2) return remainingCust;
+    if (!root || remainingCust.empty() || depth >= 2) return;
 
-    // Define distance threshold (adjust this value as needed)
-    const double DISTANCE_THRESHOLD = 0.015; // About 5km in decimal degrees
-
-    // Filter close customers
+    const double DISTANCE_THRESHOLD = 0.015;
     std::vector<Customer> closeCustomers;
+    double distThresh = DISTANCE_THRESHOLD;
+    
+    // Find close customers
     bool someone_found = false;
-    for (const auto& customer : remainingCust) {
-        double distance = getDistance(currCust.destinationX, currCust.destinationY,
-                                    customer.coordX, customer.coordY);
-        if (distance <= DISTANCE_THRESHOLD) {
-            closeCustomers.push_back(customer);
-        }
-    }
-
-    // Create nodes only for close customers
-    for (const auto& customer : closeCustomers) {
-        double weight = getWeight(currCust, customer);
-        std::string nodeName = customer.id + "_" + std::to_string(weight);
-        auto customerNode = std::make_shared<TreeNode>(nodeName);
-        root->addChild(customerNode);
-
-        // Create new remaining customers vector without current customer
-        std::vector<Customer> newRemaining;
-        for (const auto& c : remainingCust) {
-            if (c.id != customer.id) {
-                newRemaining.push_back(c);
+    while (!someone_found && distThresh <= 0.1) {  // Add upper limit to threshold
+        for (const auto& customer : remainingCust) {
+            double distance = getDistance(currCust.destinationX, currCust.destinationY,
+                                       customer.coordX, customer.coordY);
+            if (distance <= distThresh) {
+                closeCustomers.push_back(customer);
+                someone_found = true;
             }
         }
+        distThresh += 0.01;
+    }
 
-        makeChildren(customerNode, customer, newRemaining, depth +1);
+    // Process close customers
+    for (const auto& customer : closeCustomers) {
+        float weight = getWeight(currCust, customer);
+        auto customerNode = std::make_shared<TreeNode>(customer.id, weight);
+        
+        if (root) {  // Add null check
+            root->addChild(customerNode);
+        }
+
+        // Create new remaining customers vector
+        std::vector<Customer> newRemaining;
+        std::copy_if(remainingCust.begin(), remainingCust.end(),
+                    std::back_inserter(newRemaining),
+                    [&customer](const Customer& c) { return c.id != customer.id; });
+
+        makeChildren(customerNode, customer, newRemaining, depth + 1);
+    }
+}
+
+void TreeGenerator::makeChildrenVehicle(std::shared_ptr<TreeNode> root,
+                     const double vehicleX,
+                     const double vehicleY,
+                     std::vector<Customer>& remainingCust,
+                     int depth)
+    {
+    if (!root || remainingCust.empty() || depth >= 2) return;
+
+    const double DISTANCE_THRESHOLD = 0.015;
+    std::vector<Customer> closeCustomers;
+    double distThresh = DISTANCE_THRESHOLD;
+    
+    // Find close customers
+    bool someone_found = false;
+    while (!someone_found && distThresh <= 0.1) {  // Add upper limit to threshold
+        for (const auto& customer : remainingCust) {
+            double distance = getDistance(vehicleX, vehicleY,
+                                       customer.coordX, customer.coordY);
+            if (distance <= distThresh) {
+                closeCustomers.push_back(customer);
+                someone_found = true;
+            }
+        }
+        distThresh += 0.01;
+    }
+
+    // Process close customers
+    for (const auto& customer : closeCustomers) {
+        float weight = getWeightVehicle(((float) vehicleX), ((float) vehicleY), customer);
+        auto customerNode = std::make_shared<TreeNode>(customer.id, weight);
+        
+        if (root) {  // Add null check
+            root->addChild(customerNode);
+        }
+
+        // Create new remaining customers vector
+        std::vector<Customer> newRemaining;
+        std::copy_if(remainingCust.begin(), remainingCust.end(),
+                    std::back_inserter(newRemaining),
+                    [&customer](const Customer& c) { return c.id != customer.id; });
+
+        makeChildren(customerNode, customer, newRemaining, depth + 1);
     }
 }
 
@@ -70,18 +124,16 @@ std::map<std::string, std::shared_ptr<TreeNode>> TreeGenerator::generateTrees(in
     std::map<std::string, std::shared_ptr<TreeNode>> customerTrees;
 
     for (const auto& customer : customers) {
-        auto root = std::make_shared<TreeNode>(customer.id + "_0");
-        
-        // Create remaining customers vector without current customer
-        std::vector<Customer> remaining;
-        for (const auto& c : customers) {
-            if (c.id != customer.id) {
-                remaining.push_back(c);
-            }
-        }
+        auto root = std::make_shared<TreeNode>(customer.id, 0.0f);
+        if (!root) continue;  // Add null check
 
-        remaining = makeChildren(root, customer, remaining, 0);
-        customerTrees[customer.id] = root, remaining;
+        std::vector<Customer> remaining;
+        std::copy_if(customers.begin(), customers.end(),
+                    std::back_inserter(remaining),
+                    [&customer](const Customer& c) { return c.id != customer.id; });
+
+        makeChildren(root, customer, remaining, 0);
+        customerTrees[customer.id] = root;
 
         std::cout << "\nCustomer " << customer.id << " tree:\n";
         printTree(root);
