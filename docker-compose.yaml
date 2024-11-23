@@ -47,6 +47,24 @@ services:
     restart: no
     depends_on:
       - postgres
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A app.tasks.celery worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - redis
+      - ollsoft_website
 
   ollsoft_website:
     build:

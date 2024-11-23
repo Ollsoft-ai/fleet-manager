@@ -2,10 +2,10 @@ import requests
 import json
 import time
 # Constants
-SCENARIO_ID = "8dc13b21-bc5f-46b1-a231-960d111314ad"  # Replace with your actual scenario ID
+SCENARIO_ID = "eca895c8-90cd-4bbf-a4ea-f1e57ac5af75"  # Replace with your actual scenario ID
 BASE_URL_RUNNER = "http://localhost:8090"
 BASE_URL_BACKEND = "http://localhost:8080"
-SIMULATION_SPEED = 0.2
+SIMULATION_SPEED = 0.05
 
 #get scneario from db
 headers = {'Content-Type': 'application/json'}
@@ -31,17 +31,20 @@ if response.status_code != 200:
 response = requests.post(
     f"{BASE_URL_RUNNER}/Runner/launch_scenario/{SCENARIO_ID}",
     headers=headers,
-    json={"speed": SIMULATION_SPEED}
+    params={"speed": SIMULATION_SPEED}
 )
 if response.status_code != 200:
     raise Exception(f"Failed to start simulation: Status {response.status_code} {response.text}")
 
 print("Simulation started")
 
+scenario_id = SCENARIO_ID
+### THIS IS WHERE THE ALGORITHM SHOULD BE
+
 while True:
     # get current scenario state
     response = requests.get(
-        f"{BASE_URL_RUNNER}/Scenarios/get_scenario/{SCENARIO_ID}",
+        f"{BASE_URL_RUNNER}/Scenarios/get_scenario/{scenario_id}",
         headers=headers
     )
     if response.status_code != 200:
@@ -58,7 +61,7 @@ while True:
             break
 
     if customer_to_run is None:
-        print("No customer to run")
+        print("No customer to run, ending simulation")
         break
 
     # assign customer to vehicle and update scenario
@@ -82,5 +85,7 @@ while True:
         print(f"Assigned customer {customer_to_run['id']} to vehicle {vehicle_to_run['id']}")
 
     # print the first car
-    print(current_scenario_state["vehicles"][0])
+    print(f"vehicle: remaining time: {vehicle_to_run['remainingTravelTime']}, x and y coord: {vehicle_to_run['coordX']}, {vehicle_to_run['coordY']}")
+    print(f"customer: awaiting service: {customer_to_run['awaitingService']}, x and y coord: {customer_to_run['coordX']}, {customer_to_run['coordY']}")
+    print("--------------------------------")
     time.sleep(0.5)
