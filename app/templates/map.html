@@ -69,7 +69,7 @@
 
 
 <!-- SIMULATION COMPLETED POPUP -->
-<div id="simulationEndDialog" class="modal" style="display: none;">
+<div id="simulationEndDialog" class="modal">
     <div class="modal-content">
         <div class="modal-icon">
             <i class="fas fa-moon"></i>
@@ -115,10 +115,6 @@
         width: 20px;
         text-align: center;
     }
-
-    :root {
-    }
-    
     #map {
         width: 100% !important;
         height: 100vh !important;
@@ -139,6 +135,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .modal.show {
+        opacity: 1;
+        visibility: visible;
     }
     
     .modal-content {
@@ -148,7 +152,14 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         text-align: center;
         max-width: 400px;
-        animation: modalFadeIn 0.3s ease-out;
+        transform: scale(0.95);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    
+    .modal.show .modal-content {
+        transform: scale(1);
+        opacity: 1;
     }
     
     @keyframes modalFadeIn {
@@ -405,29 +416,39 @@ function showSimulationEndDialog() {
             updateStats(finalState);
         }
         
-        clearMap();
-        
-        document.getElementById('simulationEndDialog').style.display = 'flex';
-        simulationRunning = false;
-        currentScenarioId = null;
-        updateUI(false);
-        stopUpdates();
-        
-        // Add heatmap with 0 opacity first
-        map.addLayer(heatLayer);
-        const heatmapCanvas = document.querySelector('.leaflet-heatmap-layer');
-        if (heatmapCanvas) {
-            heatmapCanvas.style.opacity = '0';
+        setTimeout(() => {
+            const modal = document.getElementById('simulationEndDialog');
+            modal.style.display = 'flex';
             // Force a reflow
-            heatmapCanvas.offsetHeight;
-            // Fade in
-            heatmapCanvas.style.opacity = '1';
-        }
+            modal.offsetHeight;
+            modal.classList.add('show');
+            
+            simulationRunning = false;
+            currentScenarioId = null;
+            updateUI(false);
+            stopUpdates();
+            
+            // Clear map after stopping updates
+            clearMap();
+            
+            // Add heatmap with fade
+            map.addLayer(heatLayer);
+            const heatmapCanvas = document.querySelector('.leaflet-heatmap-layer');
+            if (heatmapCanvas) {
+                heatmapCanvas.style.opacity = '0';
+                heatmapCanvas.offsetHeight;
+                heatmapCanvas.style.opacity = '1';
+            }
+        }, 1000);
     });
 }
 
 function closeSimulationEndDialog() {
-    document.getElementById('simulationEndDialog').style.display = 'none';
+    const modal = document.getElementById('simulationEndDialog');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300); // Match the transition duration
 }
 
 
