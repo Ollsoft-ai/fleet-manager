@@ -25,16 +25,18 @@ double getDistance(double x1, double y1, double x2, double y2) {
     return std::sqrt(dx * dx + dy * dy);
 }
 
-void TreeGenerator::makeChildren(std::shared_ptr<TreeNode> root,
+const std::vector<Customer>& TreeGenerator::makeChildren(std::shared_ptr<TreeNode> root,
                                const Customer& currCust,
-                               const std::vector<Customer>& remainingCust) {
-    if (remainingCust.empty()) return;
+                               const std::vector<Customer>& remainingCust,
+                               int depth) {
+    if (remainingCust.empty() || depth >= 2) return remainingCust;
 
     // Define distance threshold (adjust this value as needed)
-    const double DISTANCE_THRESHOLD = 0.05; // About 5km in decimal degrees
+    const double DISTANCE_THRESHOLD = 0.015; // About 5km in decimal degrees
 
     // Filter close customers
     std::vector<Customer> closeCustomers;
+    bool someone_found = false;
     for (const auto& customer : remainingCust) {
         double distance = getDistance(currCust.destinationX, currCust.destinationY,
                                     customer.coordX, customer.coordY);
@@ -58,13 +60,13 @@ void TreeGenerator::makeChildren(std::shared_ptr<TreeNode> root,
             }
         }
 
-        makeChildren(customerNode, customer, newRemaining);
+        makeChildren(customerNode, customer, newRemaining, depth +1);
     }
 }
 
 std::map<std::string, std::shared_ptr<TreeNode>> TreeGenerator::generateTrees(int scenarioId) {
     CustomerGenerator generator;
-    auto customers = generator.generateCustomers(10);
+    auto customers = generator.generateCustomers(200);
     std::map<std::string, std::shared_ptr<TreeNode>> customerTrees;
 
     for (const auto& customer : customers) {
@@ -78,8 +80,8 @@ std::map<std::string, std::shared_ptr<TreeNode>> TreeGenerator::generateTrees(in
             }
         }
 
-        makeChildren(root, customer, remaining);
-        customerTrees[customer.id] = root;
+        remaining = makeChildren(root, customer, remaining, 0);
+        customerTrees[customer.id] = root, remaining;
 
         std::cout << "\nCustomer " << customer.id << " tree:\n";
         printTree(root);
