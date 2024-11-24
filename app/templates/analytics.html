@@ -338,10 +338,10 @@
                             document.getElementById('total-revenue').textContent = 
                                 `${Math.round(customerDistance * 4.50) + (totalCustomers * 5.80)}`;
                         
-                            const energyConsumption = metadata.total_distance_travelled * 27 / 1000;
+                            const energyConsumption = (metadata.total_distance_travelled / 1000) * 27 / 100;
                             document.getElementById('energy-consumption').textContent = `${energyConsumption.toFixed(2)}`;
-                            
-                            
+                                
+                                
                         }
                     } catch (error) {
                         console.error('Error fetching simulation data:', error);
