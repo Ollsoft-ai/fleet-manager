@@ -56,15 +56,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: >
-      sh -c "cd /app/CarAlgo && 
-             make clean && 
-             rm -f *.o && 
-             make && 
-             celery -A app.tasks.celery worker --loglevel=info"
+    command: celery -A app.tasks.celery worker --loglevel=info
     volumes:
-      - .:/app
-      - ./CarAlgo:/app/CarAlgo
+      - .:/app  
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
@@ -80,19 +74,12 @@ services:
       - "80:80"
     volumes:
       - .:/app
-      - ./CarAlgo:/app/CarAlgo
     environment:
       - FLASK_ENV=development
       - FLASK_APP=app
       - FLASK_DEBUG=1
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
-    command: >
-      sh -c "cd /app/CarAlgo && 
-             make clean && 
-             rm -f *.o && 
-             make && 
-             python /app/run.py"
 
 networks:
   default:

@@ -26,5 +26,5 @@ PYBIND11_MODULE(caralgo, m) {
 
     py::class_<Algorithm>(m, "Algorithm")
         .def(py::init<>())
-        .def("giveNextBestCustomers", &Algorithm::giveNextBestCustomers);
+        .def("assignNextCustomers", &Algorithm::assignNextCustomers);
 } 

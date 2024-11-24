@@ -109,42 +109,6 @@
         "numberOfTrips": 0,
         "remainingTravelTime": 0,
         "vehicleSpeed": null
-      },
-      {
-        "activeTime": 0,
-        "coordX": 48.120335,
-        "coordY": 11.610124,
-        "customerId": null,
-        "distanceTravelled": 0,
-        "id": "a984782f-5132-4d5d-866a-e111118aa167",
-        "isAvailable": true,
-        "numberOfTrips": 0,
-        "remainingTravelTime": 0,
-        "vehicleSpeed": null
-      },
-      {
-        "activeTime": 0,
-        "coordX": 48.157307,
-        "coordY": 11.532551,
-        "customerId": null,
-        "distanceTravelled": 0,
-        "id": "0200691d-4897-4d6d-94bf-53edeb954557",
-        "isAvailable": true,
-        "numberOfTrips": 0,
-        "remainingTravelTime": 0,
-        "vehicleSpeed": null
-      },
-      {
-        "activeTime": 0,
-        "coordX": 48.14263,
-        "coordY": 11.525234,
-        "customerId": null,
-        "distanceTravelled": 0,
-        "id": "3b078084-985a-4fa3-b161-3120f42a47c5",
-        "isAvailable": true,
-        "numberOfTrips": 0,
-        "remainingTravelTime": 0,
-        "vehicleSpeed": null
       }
     ]
   }

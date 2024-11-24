@@ -8,24 +8,27 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app:/app/CarAlgo:$PYTHONPATH
-
-# Set working directory
 WORKDIR /app
 
-# Install Python dependencies
+# Install Python dependencies first
 COPY requirements.txt .
-RUN pip install -r requirements.txt
-RUN pip install pybind11
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . .
+# Copy only necessary files
+COPY CarAlgo ./CarAlgo
+COPY app ./app
+COPY run.py .
 
-# Expose port
-EXPOSE 5000
+# Build and install the C++ extension
+RUN cd CarAlgo && \
+    make clean && \
+    make all && \
+    cp caralgo*.so /usr/local/lib/python3.11/site-packages/ && \
+    cd ..
 
-# Run the application
+EXPOSE 80
+
+# Add the current directory to PYTHONPATH
+ENV PYTHONPATH=/app:$PYTHONPATH
+
 CMD ["python", "run.py"]
