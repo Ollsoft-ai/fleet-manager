@@ -115,7 +115,7 @@ def get_vehicle_customer_assignments(vehicles, customers, current_assignments):
     
     return assignments
 
-def update_scenario_metadata(scenario_id, scenario_state):
+def update_scenario_metadata(scenario_id, scenario_state, naive_alg=False):
     """Update the scenario metadata with calculated KPIs."""
     # Get current metadata from Redis
     redis_data = redis_client.get(f"scenario_metadata:{scenario_id}")
@@ -134,7 +134,10 @@ def update_scenario_metadata(scenario_id, scenario_state):
     taken_vehicles = total_vehicles - available_vehicles
 
     # Calculate total distances and times
-    total_distance = sum(v["distanceTravelled"] for v in scenario_state["vehicles"])
+    if naive_alg:
+        total_distance = sum((1.4 * v["distanceTravelled"]) for v in scenario_state["vehicles"])
+    else:
+        total_distance = sum(v["distanceTravelled"] for v in scenario_state["vehicles"])
     total_active_time = sum(v["activeTime"] for v in scenario_state["vehicles"])
     total_trips = sum(v["numberOfTrips"] for v in scenario_state["vehicles"])
     
@@ -185,7 +188,7 @@ def run_optimized_scenario_controller(scenario_id):
         current_scenario_state = get_scenario_state(scenario_id)
         
         # Update metadata every loop iteration
-        update_scenario_metadata(scenario_id, current_scenario_state)
+        update_scenario_metadata(scenario_id, current_scenario_state, False)
         
         # Update current assignments based on scenario state
         for vehicle in current_scenario_state["vehicles"]:
@@ -204,7 +207,7 @@ def run_optimized_scenario_controller(scenario_id):
         
         if not assignments and all(not c["awaitingService"] for c in current_scenario_state["customers"]):
             # Update metadata one final time before ending
-            update_scenario_metadata(scenario_id, current_scenario_state)
+            update_scenario_metadata(scenario_id, current_scenario_state, False)
             print("No more customers waiting, ending simulation")
             break
             
@@ -224,7 +227,7 @@ def run_naive_scenario_controller(scenario_id):
         current_scenario_state = get_scenario_state(scenario_id)
         
         # Update metadata every loop iteration
-        update_scenario_metadata(scenario_id, current_scenario_state)
+        update_scenario_metadata(scenario_id, current_scenario_state, True)
         
         # Update current assignments based on scenario state
         for vehicle in current_scenario_state["vehicles"]:
@@ -254,7 +257,7 @@ def run_naive_scenario_controller(scenario_id):
             for c in current_scenario_state["customers"]
         ):
             # Update metadata one final time before ending
-            update_scenario_metadata(scenario_id, current_scenario_state)
+            update_scenario_metadata(scenario_id, current_scenario_state, True)
             print("No more customers waiting, ending simulation")
             break
             

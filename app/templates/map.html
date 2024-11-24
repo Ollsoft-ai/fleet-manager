@@ -413,7 +413,6 @@ function showSimulationEndDialog() {
     getScenarioState().then(finalState => {
         if (finalState) {
             updateMap(finalState);
-            updateStats(finalState);
         }
         
         setTimeout(() => {
