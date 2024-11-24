@@ -319,7 +319,7 @@
                                 `${(kpis.average_customer_trip_distance / 1000).toFixed(1)}`;
                             
                             document.getElementById('trips-per-vehicle').textContent = 
-                                kpis.average_number_of_trips_per_vehicle;
+                                kpis.average_number_of_trips_per_vehicle.toFixed(1);
                             
                             document.getElementById('total-distance').textContent = 
                                 `${(metadata.total_distance_travelled / 1000).toFixed(1)}`;
