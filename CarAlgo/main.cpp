@@ -14,13 +14,19 @@ int main() {
     // Call generateTrees on the instance
     //auto trees = generator.generateTrees(123455);
     CustomerGenerator generator;
-    auto customers = generator.generateCustomers(20);
+    auto customers = generator.generateCustomers(200);
     std::vector<Customer> ignore_list = {};
     ignore_list.push_back(customers[0]);
-    Vehicle vehicle(48.15, 11.5, "vehicle_1", "some customer", 0);
+    Vehicle vehicle0(48.15, 11.5, "vehicle_1", "some customer", 0);
+    Vehicle vehicle1(48.17, 11.45, "vehicle_2", "some customer", 0);
+    Vehicle vehicle2(48.13, 11.4, "vehicle_3", "some customer", 0);
+    std::vector<Vehicle> vics = {};
+    vics.push_back(vehicle0);
+    vics.push_back(vehicle1);
+    vics.push_back(vehicle2);
 
     Algorithm algo;
-    std::vector<std::string> response = algo.giveNextBestCustomers(customers, vehicle, 0.0015, ignore_list);
+    std::map<std::string, std::vector<std::string>> response = algo.assignNextCustomers(customers, vics, 0.0015);
 
     // Stop timer and calculate duration
     auto end = std::chrono::high_resolution_clock::now();
@@ -28,8 +34,11 @@ int main() {
 
     // Print execution time (fixing the format specifier)
     printf("Execution time: %ld milliseconds\n", duration.count());
-    for(const auto& str : response) {
-        std::cout << str << " ";
+    for(const auto& [vehicle_id, assignments] : response) {
+        std::cout << "Vehicle " << vehicle_id << " assignments:\n";
+        for(const auto& assignment : assignments) {
+            std::cout << "  " << assignment << "\n";
+        }
     }
 
     printf("\n Excluded:  ");
