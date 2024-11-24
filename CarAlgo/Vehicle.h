@@ -9,5 +9,5 @@ public:
     std::string customer_id;
     int number_of_trips;
 
-    Vehicle(float cX, float cY,std::string id,  std::string customer_id, int number_of_trips = 0);
+    Vehicle(float cX, float cY,std::string id,  std::string customer_id, int number_of_trips);
 };

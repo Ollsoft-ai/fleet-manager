@@ -6,11 +6,11 @@
 #include <string>  // Add these two includes
 
 class Algorithm {
-private:
-    TreeGenerator treeGenerator;
-
 public:
-    std::vector<std::string> giveNextBestCustomers(std::vector<Customer> customer_list, 
-                                                  Vehicle vehicle, 
-                                                  double radius_threshhold);
+    static std::vector<std::string> findNextBestOption(std::shared_ptr<TreeNode> root, 
+                                                      std::vector<Customer> ignore_list);
+    static std::vector<std::string> giveNextBestCustomers(std::vector<Customer> customers, 
+                                                         Vehicle vehicle, 
+                                                         double maxDistance,
+                                                         std::vector<Customer> ignore_list);
 };

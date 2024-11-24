@@ -12,4 +12,5 @@ public:
 
     TreeNode(const std::string& nodeName, const float weight);
     void addChild(std::shared_ptr<TreeNode> child);
+    std::vector<std::shared_ptr<TreeNode>> getChildren(std::shared_ptr<TreeNode> root);
 };
