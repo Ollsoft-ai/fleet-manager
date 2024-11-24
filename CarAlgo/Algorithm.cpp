@@ -29,13 +29,8 @@ std::map<std::string, std::vector<std::string>> Algorithm::assignNextCustomers(
     std::map<std::string, float> total_weights;
     std::vector<Customer> global_ignore_list;
     
-    // Debug print
-    std::cout << "\nProcessing " << vehicles.size() << " vehicles\n";
-
     // First pass: Get initial assignments for all vehicles
     for(const auto& vehicle : vehicles) {
-        std::cout << "\nProcessing vehicle: " << vehicle.id << std::endl;
-        
         auto result = giveNextBestCustomers(customer_list, vehicle, radius_threshold, global_ignore_list);
         if(result.size() >= 2) {
             std::vector<std::string> customer_ids = {result[0].id, result[1].id};
@@ -71,21 +66,12 @@ std::map<std::string, std::vector<std::string>> Algorithm::assignNextCustomers(
             }
         }
 
-        // Print conflicts
-        std::cout << "\nChecking for conflicts:\n";
-        for(const auto& pair : customer_vehicles) {
-            std::cout << "Customer " << pair.first << " is assigned to " 
-                     << pair.second.size() << " vehicles\n";
-        }
-
         // Resolve conflicts
         for(const auto& pair : customer_vehicles) {
             const std::string& customer_id = pair.first;
             const std::vector<Vehicle>& competing_vehicles = pair.second;
             
             if(competing_vehicles.size() > 1) {
-                std::cout << "\nResolving conflict for customer: " << customer_id << std::endl;
-                
                 auto max_weight_vehicle = std::max_element(
                     competing_vehicles.begin(), competing_vehicles.end(),
                     [&total_weights](const Vehicle& a, const Vehicle& b) {
@@ -93,9 +79,6 @@ std::map<std::string, std::vector<std::string>> Algorithm::assignNextCustomers(
                     });
 
                 if(max_weight_vehicle != competing_vehicles.end()) {
-                    std::cout << "Vehicle " << max_weight_vehicle->id 
-                             << " needs new assignment\n";
-                    
                     std::vector<Customer> local_ignore_list = global_ignore_list;
                     
                     // Add the contested customer to ignore list
@@ -122,18 +105,6 @@ std::map<std::string, std::vector<std::string>> Algorithm::assignNextCustomers(
             }
         }
     } while(changes_made);
-
-    // Print final assignments with weights
-    std::cout << "\nFinal Assignments:\n";
-    for(const auto& pair : assignments) {
-        const std::string& vid = pair.first;
-        const std::vector<std::string>& assigned_customers = pair.second;
-        
-        std::cout << "Vehicle " << vid << " (total weight: " << total_weights[vid] << "):\n";
-        for(const auto& cid : assigned_customers) {
-            std::cout << "  Customer: " << cid << "\n";
-        }
-    }
 
     return assignments;
 }
@@ -179,8 +150,6 @@ std::vector<CustomerOption> Algorithm::giveNextBestCustomers(std::vector<Custome
     TreeGenerator treeGenerator;
     auto root = std::make_shared<TreeNode>(vehicle.id, 0.0f);
     treeGenerator.makeChildrenVehicle(root, vehicle.coordX,vehicle.coordY,customer_list, 0, 2);
-    std::cout << "\nVehicle Tree Structure:\n";
-    treeGenerator.printTree(root); 
     std::vector<CustomerOption> result = findNextBestOption(root, ignore_list);
     return result;
 }

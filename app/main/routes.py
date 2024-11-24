@@ -49,8 +49,8 @@ def run(scenario_id):
     # Get algorithm type from request parameters, default to "optimized"
     algorithm = request.args.get('algorithm', 'optimized')
     
-    if algorithm not in ['optimized', 'naive']:
-        return {"error": "Invalid algorithm type. Must be 'optimized' or 'naive'"}, 400
+    if algorithm not in ['optimized', 'naive', "cpp_optimized"]:
+        return {"error": "Invalid algorithm type. Must be 'optimized' or 'naive' or 'cpp_optimized'"}, 400
 
     # get scenario from db
     headers = {'Content-Type': 'application/json'}
