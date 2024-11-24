@@ -15,4 +15,10 @@ private:
     double calculateTotalDistance(const Vehicle& vehicle, 
                                 const Customer& first, 
                                 const Customer& second);
+    static std::vector<std::string> findNextBestOption(std::shared_ptr<TreeNode> root, 
+                                                      std::vector<Customer> ignore_list);
+    static std::vector<std::string> giveNextBestCustomers(std::vector<Customer> customers, 
+                                                         Vehicle vehicle, 
+                                                         double maxDistance,
+                                                         std::vector<Customer> ignore_list);
 };

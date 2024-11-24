@@ -77,7 +77,8 @@ void TreeGenerator::makeChildrenVehicle(std::shared_ptr<TreeNode> root,
                      const double vehicleX,
                      const double vehicleY,
                      std::vector<Customer>& remainingCust,
-                     int depth)
+                     int depth,
+                     int desired_depth)
     {
     if (!root || remainingCust.empty() || depth >= 2) return;
 

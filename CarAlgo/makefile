@@ -9,7 +9,7 @@ PY_EXT_SUFFIX := $(shell python3-config --extension-suffix)
 TARGET = caralgo$(PY_EXT_SUFFIX)
 
 # Only include files that actually exist
-SOURCES = Algorithm.cpp Customer.cpp Vehicle.cpp bindings.cpp
+SOURCES = bindings.cpp main.cpp Customer.cpp TreeNode.cpp CustomerGenerator.cpp TreeGenerator.cpp Algorithm.cpp Vehicle.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # Clean all objects before building
