@@ -41,9 +41,22 @@ def update_vehicle_assignment(scenario_id, vehicle_id, customer_id):
     if response.status_code != 200:
         raise Exception(f"Failed to assign customer to vehicle: Status {response.status_code} {response.text}")
 
-def calculate_distance(point1_x, point1_y, point2_x, point2_y):
-    """Calculate Euclidean distance between two points."""
-    return ((point1_x - point2_x) ** 2 + (point1_y - point2_y) ** 2) ** 0.5
+def calculate_distance(x1, y1, x2, y2):
+    """Calculate the distance between two points using the Haversine formula"""
+    from math import radians, sin, cos, sqrt, atan2
+    
+    R = 6371000  # Earth's radius in meters
+    
+    lat1, lon1 = radians(x1), radians(y1)
+    lat2, lon2 = radians(x2), radians(y2)
+    
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    
+    return R * c
 
 def find_closest_customer(vehicle, customers, assigned_customers=None):
     """Find the closest unassigned customer for a vehicle."""
@@ -156,10 +169,50 @@ def update_scenario_metadata(scenario_id, scenario_state, naive_alg=False):
     taken_vehicles = total_vehicles - available_vehicles
 
     # Calculate total distances and times
-    if naive_alg:
-        total_distance = sum((1.4 * v["distanceTravelled"]) for v in scenario_state["vehicles"])
-    else:
-        total_distance = sum(v["distanceTravelled"] for v in scenario_state["vehicles"])
+    total_distance = 0
+    total_distance_with_customer = 0
+    
+    print("\n=== Distance Calculation Debug ===")
+    print(f"Number of vehicles: {len(scenario_state['vehicles'])}")
+    print(f"Number of customers: {len(scenario_state['customers'])}")
+    
+    for v in scenario_state["vehicles"]:
+        print(f"\nVehicle {v['id']}:")
+        print(f"- Is Available: {v['isAvailable']}")
+        print(f"- Total distance: {v['distanceTravelled']}")
+        print(f"- Customer ID: {v['customerId']}")
+        print(f"- Number of trips: {v['numberOfTrips']}")
+        print(f"- Active Time: {v['activeTime']}")
+        
+        if naive_alg:
+            vehicle_distance = 1.4 * v["distanceTravelled"]
+        else:
+            vehicle_distance = v["distanceTravelled"]
+            
+        total_distance += vehicle_distance
+        
+        # Calculate customer distance for vehicles that have completed trips
+        if v["numberOfTrips"] > 0:
+            # Get the customer's start and destination coordinates
+            customer = next((c for c in scenario_state["customers"] 
+                           if not c["awaitingService"]), None)
+            if customer:
+                customer_trip_distance = calculate_distance(
+                    customer["coordX"], customer["coordY"],
+                    customer["destinationX"], customer["destinationY"]
+                )
+                total_distance_with_customer += customer_trip_distance
+                print(f"- Calculated customer trip distance: {customer_trip_distance}")
+            else:
+                print("- No completed customer found")
+        else:
+            print("- No customer distance (no completed trips)")
+            
+    print(f"\nFinal Totals:")
+    print(f"Total distance: {total_distance:.2f}")
+    print(f"Total customer distance: {total_distance_with_customer:.2f}")
+    print("================================\n")
+
     total_active_time = sum(v["activeTime"] for v in scenario_state["vehicles"])
     total_trips = sum(v["numberOfTrips"] for v in scenario_state["vehicles"])
     
@@ -181,14 +234,15 @@ def update_scenario_metadata(scenario_id, scenario_state, naive_alg=False):
             'average_travel_distance_to_customer_location': total_distance / served_customers if served_customers > 0 else 0,
             'vehicle_utilization_rate': utilization_rate,
             'total_distance_travelled': total_distance,
-            'total_distance_without_customer': 0,  # Need additional tracking
-            'total_distance_with_customer': total_distance,  # Assuming all distance is with customer for now
+            'total_distance_without_customer': total_distance - total_distance_with_customer,
+            'total_distance_with_customer': total_distance_with_customer,
             'average_customer_wait_time': 0,  # Need additional tracking
             'realtime_kpis': {
                 'completion_rate': completion_rate,
                 'fuel_saved': 0,  # Need optimal route calculation
                 'total_travel_time': total_active_time,
                 'total_travel_distance': total_distance,
+                'total_travel_distance_with_customer': total_distance_with_customer,
                 'average_number_of_trips_per_vehicle': avg_trips_per_vehicle,
                 'number_of_waiting_customers': waiting_customers,
                 'number_of_available_vehicles': available_vehicles,

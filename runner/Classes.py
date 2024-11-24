@@ -7,31 +7,34 @@ from DbConfig import Base, engine
 
 # Define the Scenario, Vehicle, and Customer classes
 class Vehicle:
-    def __init__(self, id, coordX, coordY, vehicleSpeed=None, isAvailable=None, customerId=None, remainingTravelTime=None,
-                 distanceTravelled=None, activeTime=None, numberOfTrips=None):
+    def __init__(self, id, coordX, coordY, customerId=None, isAvailable=True, 
+                 distanceTravelled=0, activeTime=0, numberOfTrips=0, 
+                 remainingTravelTime=None, vehicleSpeed=None):
         self.id = id
         self.coordX = coordX
         self.coordY = coordY
-        self.vehicleSpeed = vehicleSpeed
-        self.isAvailable = isAvailable
         self.customerId = customerId
-        self.remainingTravelTime = remainingTravelTime
+        self.isAvailable = isAvailable
         self.distanceTravelled = distanceTravelled
+        self.distanceWithCustomer = 0 
         self.activeTime = activeTime
         self.numberOfTrips = numberOfTrips
+        self.remainingTravelTime = remainingTravelTime
+        self.vehicleSpeed = vehicleSpeed
 
     def to_dict(self):
         return {
             "id": self.id,
             "coordX": self.coordX,
             "coordY": self.coordY,
-            "vehicleSpeed": self.vehicleSpeed,
-            "isAvailable": self.isAvailable,
             "customerId": self.customerId,
-            "remainingTravelTime": self.remainingTravelTime,
+            "isAvailable": self.isAvailable,
             "distanceTravelled": self.distanceTravelled,
+            "distanceWithCustomer": self.distanceWithCustomer,  # Include in dict
             "activeTime": self.activeTime,
-            "numberOfTrips": self.numberOfTrips
+            "numberOfTrips": self.numberOfTrips,
+            "remainingTravelTime": self.remainingTravelTime,
+            "vehicleSpeed": self.vehicleSpeed
         }
 
 class Customer:
