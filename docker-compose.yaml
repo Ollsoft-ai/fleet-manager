@@ -58,7 +58,7 @@ services:
       dockerfile: Dockerfile
     command: celery -A app.tasks.celery worker --loglevel=info
     volumes:
-      - .:/app
+      - .:/app  
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1

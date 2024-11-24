@@ -58,6 +58,10 @@
                     <i class="fas fa-play"></i>
                     Run Optimized
                 </button>
+                <button class="run-scenario cpp_optimized">
+                    <i class="fas fa-play"></i>
+                    Run C++ Optimized
+                </button>
                 <button class="run-scenario naive">
                     <i class="fas fa-play"></i>
                     Run Naive
@@ -758,20 +762,23 @@ function stopUpdates() {
 
 function updateUI(running) {
     const optimizedButton = document.querySelector('.run-scenario.optimized');
+    const cppOptimizedButton = document.querySelector('.run-scenario.cpp_optimized');
     const naiveButton = document.querySelector('.run-scenario.naive');
     
     if (running) {
         // Determine which button was clicked and make it the active stop button
-        const activeButton = document.activeElement.classList.contains('optimized') ? optimizedButton : naiveButton;
-        const inactiveButton = activeButton === optimizedButton ? naiveButton : optimizedButton;
+        const activeButton = document.activeElement.classList.contains('optimized') ? optimizedButton : cppOptimizedButton;
+        const inactiveButton = activeButton === optimizedButton ? cppOptimizedButton : optimizedButton;
         
         activeButton.innerHTML = `<i class="fas fa-stop"></i> Stop`;
         activeButton.classList.add('running', 'active');
         inactiveButton.classList.remove('running');
     } else {
         optimizedButton.innerHTML = `<i class="fas fa-play"></i> Run Optimized`;
+        cppOptimizedButton.innerHTML = `<i class="fas fa-play"></i> Run C++ Optimized`;
         naiveButton.innerHTML = `<i class="fas fa-play"></i> Run Naive`;
         optimizedButton.classList.remove('running');
+        cppOptimizedButton.classList.remove('running');
         naiveButton.classList.remove('running');
     }
 }
@@ -930,6 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadScenarios();
     
     const optimizedButton = document.querySelector('.run-scenario.optimized');
+    const cppOptimizedButton = document.querySelector('.run-scenario.cpp_optimized');
     const naiveButton = document.querySelector('.run-scenario.naive');
     
     async function handleRunClick(algorithm) {
@@ -947,6 +955,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     optimizedButton.addEventListener('click', () => handleRunClick('optimized'));
+    cppOptimizedButton.addEventListener('click', () => handleRunClick('cpp_optimized'));
     naiveButton.addEventListener('click', () => handleRunClick('naive'));
 });
 

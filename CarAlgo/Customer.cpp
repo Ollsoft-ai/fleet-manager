@@ -1,8 +1,8 @@
 #include "Customer.h"
 #include <random>
-#include <uuid/uuid.h> // You'll need a UUID library, or you can implement your own ID generation
+#include <uuid/uuid.h>
 
-std::string uuid_generate() {
+static std::string generate_customer_uuid() {
     uuid_t uuid;
     char uuid_str[37];
     uuid_generate(uuid);
@@ -21,7 +21,7 @@ Customer Customer::createRandom(float minLat, float maxLat, float minLon, float 
     std::uniform_real_distribution<> lonDist(minLon, maxLon);
 
     // Generate UUID (implementation depends on your UUID library)
-    std::string uuid = uuid_generate(); // You'll need to implement this
+    std::string uuid = generate_customer_uuid(); // You'll need to implement this
 
     return Customer(
         latDist(gen),  // coordX

@@ -5,6 +5,7 @@ import redis
 import json
 from datetime import datetime
 import random
+from caralgo import Algorithm, Customer, Vehicle
 
 BASE_URL_RUNNER = "http://scenariorunner:8090"
 HEADERS = {'Content-Type': 'application/json'}
@@ -81,6 +82,27 @@ def find_closest_customer(vehicle, customers, assigned_customers=None):
     )
     
     return closest_customer
+
+def convert_to_cpp_customer(customer_dict):
+    """Convert a customer dictionary to a C++ Customer object"""
+    return Customer(
+        customer_dict["coordX"],
+        customer_dict["coordY"],
+        customer_dict.get("destinationX", 0.0),  # Add default if not present
+        customer_dict.get("destinationY", 0.0),  # Add default if not present
+        customer_dict["id"],
+        customer_dict["awaitingService"]
+    )
+
+def convert_to_cpp_vehicle(vehicle_dict):
+    """Convert a vehicle dictionary to a C++ Vehicle object"""
+    return Vehicle(
+        vehicle_dict["coordX"],
+        vehicle_dict["coordY"],
+        vehicle_dict["id"],
+        vehicle_dict.get("customerId", "") or "",  # Convert None to empty string
+        0  # Default number of trips
+    )
 
 def get_vehicle_customer_assignments(vehicles, customers, current_assignments):
     """
@@ -326,6 +348,63 @@ def run_naive_scenario_controller(scenario_id):
                 
         time.sleep(0.005)  # Short sleep to prevent overwhelming the system
 
+def run_cpp_optimized_scenario_controller(scenario_id):
+    """C++ optimized implementation using the caralgo library."""
+    algorithm = Algorithm()  # Create instance of C++ algorithm
+    current_assignments = {}  # vehicle_id -> customer_id
+
+    while True:
+        current_scenario_state = get_scenario_state(scenario_id)
+        
+        # Update metadata every loop iteration
+        update_scenario_metadata(scenario_id, current_scenario_state, False)
+        
+        # Update current assignments based on scenario state
+        for vehicle in current_scenario_state["vehicles"]:
+            vehicle_id = vehicle["id"]
+            if vehicle["customerId"] is None:
+                current_assignments.pop(vehicle_id, None)
+            else:
+                current_assignments[vehicle_id] = vehicle["customerId"]
+
+        # Get available vehicles and customers
+        available_vehicles = [
+            convert_to_cpp_vehicle(v) for v in current_scenario_state["vehicles"]
+            if v["isAvailable"] and v["customerId"] is None
+        ]
+        
+        available_customers = [
+            convert_to_cpp_customer(c) for c in current_scenario_state["customers"]
+            if c["awaitingService"] and c["id"] not in current_assignments.values()
+        ]
+
+        # Check if we're done
+        if not available_customers and all(
+            not c["awaitingService"] 
+            for c in current_scenario_state["customers"]
+        ):
+            update_scenario_metadata(scenario_id, current_scenario_state, False)
+            print("No more customers waiting, ending simulation")
+            break
+
+        # Only run algorithm if we have both available vehicles and customers
+        if available_vehicles and available_customers:
+            # Get optimal assignments from C++ algorithm
+            # The radius threshold (3.0) can be adjusted based on your needs
+            assignments = algorithm.assignNextCustomers(available_customers, available_vehicles, 3.0)
+            print(assignments)
+            
+            # Process assignments
+            for vehicle_id, customer_sequence in assignments.items():
+                if customer_sequence:  # Only process if we have customers to assign
+                    # Assign the first customer in the sequence
+                    first_customer_id = customer_sequence[0]
+                    update_vehicle_assignment(scenario_id, vehicle_id, first_customer_id)
+                    current_assignments[vehicle_id] = first_customer_id
+                    print(f"Assigned customer {first_customer_id} to vehicle {vehicle_id}")
+
+        time.sleep(0.005)  # Short sleep to prevent overwhelming the system
+
 @celery.task(bind=True)
 def run_scenario_controller(self, scenario_id, algorithm="optimized"):
     """Background task that runs the scenario controller algorithm with precomputed assignments"""
@@ -338,10 +417,12 @@ def run_scenario_controller(self, scenario_id, algorithm="optimized"):
     redis_client.set(f"scenario_metadata:{scenario_id}", json.dumps(metadata))
 
     print("Running scenario controller with algorithm: ", algorithm)
-    if (algorithm == "optimized"):
+    if algorithm == "optimized":
         run_optimized_scenario_controller(scenario_id)
-    elif (algorithm == "naive"):
+    elif algorithm == "naive":
         run_naive_scenario_controller(scenario_id)
+    elif algorithm == "cpp_optimized":
+        run_cpp_optimized_scenario_controller(scenario_id)
     else:
         run_optimized_scenario_controller(scenario_id)
         
