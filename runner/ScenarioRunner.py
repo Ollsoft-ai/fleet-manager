@@ -219,53 +219,33 @@ class LaunchScenario(Resource):
 
 
     def executeRoute(self, vehicle, scenario, scenario_metadata, speed):
-
-        # Simulate countdown (for example purposes)
-        print(f"Vehicle {vehicle.id} is now unavailable. Remaining travel time: {vehicle.remainingTravelTime} seconds.\n")
-        
-        # Find the customer associated with the vehicle
+        # Get customer
         customer = next((c for c in scenario.customers if c.id == vehicle.customerId), None)
-        vehicle_metadata = next((v for v in scenario_metadata.vehicle_data if v.id == vehicle.id), None)
-        vehicle_metadata.travel_times = vehicle_metadata.travel_times + "," + str(vehicle.remainingTravelTime)
-        session.merge(scenario_metadata)
-        vehicle.activeTime += vehicle.remainingTravelTime
-        for remaining_time in range(vehicle.remainingTravelTime, 0, -1):
-            vehicle.remainingTravelTime = remaining_time
-            time.sleep(speed)  # Simulate time passage (adjust as needed)
+        if not customer:
+            return
 
-        # Update vehicle and customer after countdown
-        if customer:
-            # Update vehicle's coordinates to match customer's
-            vehicle.coordX = customer.coordX
-            vehicle.coordY = customer.coordY
-            print(f"Vehicle {vehicle.id} moved to customer's location: ({customer.coordX}, {customer.coordY}).")
+        # First leg: Drive to customer
+        pickup_distance = calculate_distance(vehicle.coordX, vehicle.coordY, customer.coordX, customer.coordY)
+        vehicle.distanceTravelled += pickup_distance
+        vehicle.emptyDistance = getattr(vehicle, 'emptyDistance', 0) + pickup_distance
+        
+        # Update vehicle position to customer location
+        vehicle.coordX = customer.coordX
+        vehicle.coordY = customer.coordY
 
-            vehicle.remainingTravelTime = (calculate_remaining_travel_time
-                    (vehicle.coordX, vehicle.coordY, customer.destinationX, customer.destinationY, vehicle.vehicleSpeed))
-            vehicle.activeTime += vehicle.remainingTravelTime
-            vehicle_metadata.travel_times = vehicle_metadata.travel_times + "," + str(vehicle.remainingTravelTime)
-            session.merge(scenario_metadata)
-            print(f"Vehicle {vehicle.id} is now en route to destination: ({customer.destinationX}, {customer.destinationY}).")
-            for remaining_time in range(vehicle.remainingTravelTime, 0, -1):
-                vehicle.remainingTravelTime = remaining_time
-                time.sleep(speed)
+        # Second leg: Drive customer to destination
+        customer_distance = calculate_distance(customer.coordX, customer.coordY, 
+                                            customer.destinationX, customer.destinationY)
+        vehicle.distanceTravelled += customer_distance
+        vehicle.customerDistance = getattr(vehicle, 'customerDistance', 0) + customer_distance
+        
+        # Update vehicle position to destination
+        vehicle.coordX = customer.destinationX
+        vehicle.coordY = customer.destinationY
 
-            # Unset customerId and mark vehicle as available
-            vehicle.customerId = None
-            vehicle.isAvailable = True
-            vehicle.distanceTravelled += calculate_distance(vehicle.coordX, vehicle.coordY, customer.destinationX, customer.destinationY)
-            vehicle.coordX = customer.destinationX
-            vehicle.coordY = customer.destinationY
-            vehicle.remainingTravelTime = None
-            vehicle.vehicleSpeed = 0
-            vehicle.numberOfTrips += 1
-            print(f"Vehicle {vehicle.id} is now available again.")
-
-            # Update customer's awaitingService status
-            customer.awaitingService = False
-            customer.coordX = customer.destinationX
-            customer.coordY = customer.destinationY
-            print(f"Customer {customer.id} is no longer awaiting service.")
+        # Update trip counters
+        vehicle.numberOfTrips += 1
+        customer.awaitingService = False
 
 
 def create_scenario_metadata(scenario):

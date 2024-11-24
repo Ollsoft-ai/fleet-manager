@@ -843,6 +843,12 @@ async function runScenario(scenarioId, algorithm = 'optimized') {
         updateUI(true);
         startUpdates();
         
+        // Update the analytics link with the current scenario ID
+        const analyticsLink = document.querySelector('a[href="/analytics"]');
+        if (analyticsLink) {
+            analyticsLink.href = `/analytics?simId=${scenarioId}`;
+        }
+        
         // Fade out heatmap
         const heatmapCanvas = document.querySelector('.leaflet-heatmap-layer');
         if (heatmapCanvas) {
@@ -868,6 +874,13 @@ async function stopScenario() {
         if (!response.ok) throw new Error('Failed to stop scenario');
         
         simulationRunning = false;
+        
+        // Reset the analytics link
+        const analyticsLink = document.querySelector('a[href*="/analytics"]');
+        if (analyticsLink) {
+            analyticsLink.href = '/analytics';
+        }
+        
         currentScenarioId = null;
         updateUI(false);
         stopUpdates();
@@ -1230,5 +1243,30 @@ const heatLayer = L.heatLayer(HEATMAP_POINTS, {
         1.0: '#E20074'   // T-Mobile magenta
     }
 }).addTo(map);
+
+let currentSimulationId = null;
+
+// Function to handle simulation start
+function startSimulation(algorithm) {
+    const scenarioId = document.getElementById('scenarioSelect').value;
+    if (!scenarioId) return;
+
+    fetch(`/run/${scenarioId}?algorithm=${algorithm}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        currentSimulationId = scenarioId;
+        console.log('Simulation started:', data);
+    });
+}
+
+// Add click handler for analytics navigation
+document.querySelector('a[href="/analytics"]').addEventListener('click', function(e) {
+    if (currentSimulationId) {
+        e.preventDefault();
+        window.location.href = `/analytics?simId=${currentSimulationId}`;
+    }
+});
 </script>
 {% endblock %}

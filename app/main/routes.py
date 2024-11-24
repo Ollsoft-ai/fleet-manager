@@ -128,8 +128,9 @@ def map():
 
 
 @main.route('/analytics')
-def analytics(): 
-    return render_template('analytics.html')
+def analytics():
+    simulation_id = request.args.get('simId')
+    return render_template('analytics.html', simulation_id=simulation_id)
 
 
 @main.route('/environment')
