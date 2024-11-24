@@ -1,261 +1,355 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% include 'sidebar.html' %}
-<div class="analytics-wrapper">
-    <!-- Main Content Grid -->
-    <div class="content-grid">
-        <!-- Key Performance Indicators -->
-        <div class="chart-section">
-            <div class="section-header">
-                <h2>Key Performance Indicators</h2>
-                <div class="refresh-indicator">
-                    <span class="pulse-dot"></span>
-                    Live
-                </div>
-            </div>
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-header">Average Trip Distance</div>
-                    <div class="metric-value" id="avg-trip-distance">-</div>
-                    <div class="metric-label">kilometers per trip</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">Trips per Vehicle</div>
-                    <div class="metric-value" id="trips-per-vehicle">-</div>
-                    <div class="metric-label">average trips</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">Total Distance</div>
-                    <div class="metric-value" id="total-distance">-</div>
-                    <div class="metric-label">kilometers total</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">Customer Distance</div>
-                    <div class="metric-value" id="customer-distance">-</div>
-                    <div class="metric-label">kilometers with customers</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">Vehicle Status</div>
-                    <div class="metric-value" id="vehicle-status">-</div>
-                    <div class="metric-label">available / total</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">Total Customers</div>
-                    <div class="metric-value" id="total-customers">-</div>
-                    <div class="metric-label">customers served</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">Total Time</div>
-                    <div class="metric-value" id="total-time">-</div>
-                    <div class="metric-label">seconds</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">Total Revenue*</div>
-                    <div class="metric-value" id="total-revenue">-</div>
-                    <div class="metric-label">EUR</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <h3>Energy Consumption</h3>
-                        <div class="info-tooltip">
-                            <span class="info-icon">ⓘ</span>
-                            <span class="tooltip-text">Based on Mercedes EQS consumption rate of ~27 kWh/km</span>
-                        </div>
-                    </div>
-                    <p><span id="energy-consumption">0</span> kWh</p>
-                </div>
+    {% include 'sidebar.html' %}
+    <div class="analytics-wrapper">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Fleet Analytics</h1>
+            <div class="dashboard-subtitle">
+                Real-time performance metrics and operational insights
             </div>
         </div>
-    </div>
-</div>
 
-<style>
-    :root {
-        --tmobile-magenta: #E20074;
-        --tmobile-magenta-dark: #B1005C;
-        --tmobile-light: #FAF9FA;
-    }
-    
-    .analytics-wrapper {
-        margin-left: var(--sidebar-width);
-        padding: 1.5rem;
-        background: var(--tmobile-light);
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        height: calc(100vh - 3rem);
-        overflow-y: auto;
-    }
-    
-    /* Content Grid */
-    .content-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        height: auto;
-    }
-    
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-    
-    .section-header h2 {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1a1a1a;
-    }
-    
-    /* Chart Section */
-    .chart-section {
-        background: white;
-        border-radius: 12px;
-        padding: 1.25rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* Metrics Grid */
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        padding: 1rem;
-    }
-    
-    .metric-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    }
-    
-    .metric-header {
-        font-size: 0.875rem;
-        color: #666;
-        margin-bottom: 0.5rem;
-    }
-    
-    .metric-value {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 0.25rem;
-    }
-    
-    .metric-label {
-        font-size: 0.75rem;
-        color: #888;
-    }
-    
-    .refresh-indicator {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        color: #666;
-    }
-    
-    .pulse-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #22c55e;
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
+        <div class="metrics-container">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Average Trip Distance
+                    </span>
+                    <div class="metric-icon">🛣️</div>
+                </div>
+                <div class="metric-value" id="avg-trip-distance">-</div>
+                <div class="metric-label">kilometers per trip</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Trips per Vehicle
+                    </span>
+                    <div class="metric-icon">🚗</div>
+                </div>
+                <div class="metric-value" id="trips-per-vehicle">-</div>
+                <div class="metric-label">average trips</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Total Distance
+                    </span>
+                    <div class="metric-icon">📍</div>
+                </div>
+                <div class="metric-value" id="total-distance">-</div>
+                <div class="metric-label">kilometers total</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Customer Distance
+                    </span>
+                    <div class="metric-icon">👥</div>
+                </div>
+                <div class="metric-value" id="customer-distance">-</div>
+                <div class="metric-label">kilometers with customers</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Vehicle Status
+                    </span>
+                    <div class="metric-icon">🚦</div>
+                </div>
+                <div class="metric-value" id="vehicle-status">-</div>
+                <div class="metric-label">available / total</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Total Customers
+                    </span>
+                    <div class="metric-icon">💼</div>
+                </div>
+                <div class="metric-value" id="total-customers">-</div>
+                <div class="metric-label">customers served</div>
+            </div>
+
+            <!-- <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Total Time
+                    </span>
+                    <div class="metric-icon">⏱️</div>
+                </div>
+                <div class="metric-value" id="total-time">-</div>
+                <div class="metric-label">seconds</div>
+            </div> -->
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Total Revenue
+                    </span>
+                    <div class="metric-icon">💶</div>
+                </div>
+                <div class="metric-value" id="total-revenue">-</div>
+                <div class="metric-label">EUR</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Energy Consumption
+                    </span>
+                    <div class="metric-icon">⚡</div>
+                </div>
+                <div class="metric-value" id="energy-consumption">-</div>
+                <div class="metric-label">kWh</div>
+            </div>
+
+            <!-- <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">
+                        Fleet Utilization Rate
+                    </span>
+                    <div class="metric-icon">📊</div>
+                </div>
+                <div class="metric-value" id="fleet-utilization">-</div>
+                <div class="metric-label">utilization rate</div>
+            </div> -->
+        </div>
+    </div>
+
+    <style>
+        :root {
+            --tmobile-magenta: #E20074;
+            --tmobile-magenta-dark: #B1005C;
+            --tmobile-light: #FAF9FA;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --sidebar-width: 300px;
+        }
+
         .analytics-wrapper {
-            margin-left: 0;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            background: #F3F4F6;
+            padding: 1.5rem;
+        }
+
+        .dashboard-header {
             padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-subtitle {
+            color: #6B7280;
+            font-size: 0.875rem;
+        }
+
+        .metrics-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* Changed to 4 columns */
+            grid-template-rows: repeat(2, 240px); /* Increased height */
+            gap: 1.5rem; /* Increased gap */
+            padding: 1.5rem;
+            max-width: 2000px; /* Increased max-width */
+            margin: 0 auto;
+            height: calc(100vh - 130px); /* Fill available height */
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem; /* Increased padding */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            height: 240px; /* Increased height */
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem; 
+        }
+
+        .metric-title {
+            font-size: 1rem; 
+            font-weight: 600;
+            color: #4B5563;
+        }
+        .metric-icon {
+            width: 40px; 
+            height: 40px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--tmobile-light);
+            border-radius: 10px;
+            font-size: 1.5rem; 
+            padding: 8px;
+            margin-left: 8px;
         }
         
-        .metrics-grid {
-            grid-template-columns: 1fr;
+
+        .metric-value {
+            font-size: 2.75rem; 
+            font-weight: 700;
+            color: #111827;
+            margin: auto 0;
         }
-    }
-</style>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const simulationId = "{{ simulation_id }}";
-        console.log('Current simulation ID:', simulationId);
 
-        if (simulationId) {
-            async function fetchSimulationData() {
-                try {
-                    const response = await fetch(`/scenario/${simulationId}`);
-                    if (!response.ok) throw new Error('Failed to fetch simulation data');
-                    const data = await response.json();
-                    
-                    if (data.metadata?.metadata?.realtime_kpis) {
-                        const kpis = data.metadata.metadata.realtime_kpis;
-                        const metadata = data.metadata.metadata;
-                        
-                        console.log("=== Analytics Update ===");
-                        console.log("Total distance:", metadata.total_distance_travelled);
-                        console.log("Customer distance:", metadata.total_distance_with_customer);
-                        
-                        // Update KPI values
-                        document.getElementById('avg-trip-distance').textContent = 
-                            `${(kpis.average_customer_trip_distance / 1000).toFixed(1)}`;
-                        
-                        document.getElementById('trips-per-vehicle').textContent = 
-                            kpis.average_number_of_trips_per_vehicle;
-                        
-                        // Total distance (including empty runs)
-                        document.getElementById('total-distance').textContent = 
-                            `${(metadata.total_distance_travelled / 1000).toFixed(1)}`;
-                        
-                        // Distance with customers only
-                        const factor = 1.95;  // Average between 1.7 and 2.2
-                        const customerDistance = (metadata.total_distance_travelled / 1000) / factor;
-                        document.getElementById('customer-distance').textContent = `${customerDistance.toFixed(1)}`;
+        .metric-label {
+            font-size: 0.875rem; 
+            color: #6B7280;
+            margin-top: auto;
+        }
 
-                        // Vehicle status
-                        document.getElementById('vehicle-status').textContent = 
-                            `${kpis.number_of_available_vehicles}/${kpis.number_of_available_vehicles + kpis.number_of_taken_vehicles}`;
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            color: var(--success-color);
+            font-weight: 500;
+            margin-left: 1rem;
+        }
 
-                        // Total time
-                        document.getElementById('total-time').textContent = `${Math.round(kpis.total_travel_time)}`;
+        .pulse-dot {
+            width: 0.375rem;
+            height: 0.375rem;
+            background: var(--success-color);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
 
-                        // Total revenue (based on approximated customer distance)
-                        document.getElementById('total-revenue').textContent = `${(Math.round(customerDistance * 3.50) + 5.80)}`;
+        .info-tooltip {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
 
-                        // Update total customers (served customers)
-                        const totalCustomers = data.customers.filter(c => !c.awaitingService).length;
-                        document.getElementById('total-customers').textContent = totalCustomers;
-                        
-                        // Energy consumption
-                        const energyConsumption = metadata.total_distance_travelled * 27 / 1000;
-                        document.getElementById('energy-consumption').textContent = `${energyConsumption.toFixed(2)}`;
-                        
-                        console.log("===================");
-                    }
-                } catch (error) {
-                    console.error('Error fetching simulation data:', error);
-                }
+        .info-icon {
+            cursor: pointer;
+            color: #9CA3AF;
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1F2937;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.688rem;
+            white-space: nowrap;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        .info-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .analytics-wrapper {
+                margin-left: 0;
+                padding: 1rem;
             }
 
-            // Initial fetch and setup periodic updates
-            fetchSimulationData();
-            const updateInterval = setInterval(fetchSimulationData, 1000);
-
-            // Cleanup interval when leaving the page
-            window.addEventListener('beforeunload', () => {
-                clearInterval(updateInterval);
-            });
+            .metrics-container {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
         }
-    });
-</script>
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const simulationId = "{{ simulation_id }}";
+            console.log('Current simulation ID:', simulationId);
+
+            if (simulationId) {
+                async function fetchSimulationData() {
+                    try {
+                        const response = await fetch(`/scenario/${simulationId}`);
+                        if (!response.ok) throw new Error('Failed to fetch simulation data');
+                        const data = await response.json();
+                        
+                        if (data.metadata?.metadata?.realtime_kpis) {
+                            const kpis = data.metadata.metadata.realtime_kpis;
+                            const metadata = data.metadata.metadata;
+                            
+                            document.getElementById('avg-trip-distance').textContent = 
+                                `${(kpis.average_customer_trip_distance / 1000).toFixed(1)}`;
+                            
+                            document.getElementById('trips-per-vehicle').textContent = 
+                                kpis.average_number_of_trips_per_vehicle;
+                            
+                            document.getElementById('total-distance').textContent = 
+                                `${(metadata.total_distance_travelled / 1000).toFixed(1)}`;
+                            
+                            const factor = 1.95;
+                            const customerDistance = (metadata.total_distance_travelled / 1000) / factor;
+                            document.getElementById('customer-distance').textContent = `${customerDistance.toFixed(1)}`;
+
+                            document.getElementById('vehicle-status').textContent = 
+                                `${kpis.number_of_available_vehicles}/${kpis.number_of_available_vehicles + kpis.number_of_taken_vehicles}`;
+
+                            
+                            const totalCustomers = data.customers.filter(c => !c.awaitingService).length;
+                            document.getElementById('total-customers').textContent = totalCustomers;
+
+                            document.getElementById('total-revenue').textContent = 
+                                `${Math.round(customerDistance * 4.50) + (totalCustomers * 5.80)}`;
+                        
+                            const energyConsumption = metadata.total_distance_travelled * 27 / 1000;
+                            document.getElementById('energy-consumption').textContent = `${energyConsumption.toFixed(2)}`;
+                            
+                            
+                        }
+                    } catch (error) {
+                        console.error('Error fetching simulation data:', error);
+                    }
+                }
+
+                fetchSimulationData();
+            }
+        });
+    </script>
 {% endblock %}

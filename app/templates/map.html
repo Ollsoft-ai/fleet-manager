@@ -311,7 +311,7 @@ const MAX_BOUNDS = [
 // Initialize map
 const map = L.map('map', {
     center: MUNICH_CENTER,
-    zoom: 12,
+    zoom: 13,
     maxBounds: MAX_BOUNDS,
     minZoom: 11,
     zoomControl: false,
@@ -334,6 +334,7 @@ let updateInterval;
 let lastUpdateTime = Date.now();
 let currentMarkers = new Map();
 let currentLines = new Map();
+let simulationEndDialogShown = false;
 
 function updateLastUpdateTime() {
     const timeDiff = Math.round((Date.now() - lastUpdateTime) / 1000);
@@ -414,6 +415,9 @@ function clearMap() {
 }
 
 function showSimulationEndDialog() {
+    if (simulationEndDialogShown) {
+        return;
+    }
     getScenarioState().then(finalState => {
         if (finalState) {
             updateMap(finalState);
@@ -451,6 +455,7 @@ function closeSimulationEndDialog() {
     modal.classList.remove('show');
     setTimeout(() => {
         modal.style.display = 'none';
+        simulationEndDialogShown = false;
     }, 300); // Match the transition duration
 }
 
@@ -839,6 +844,7 @@ async function loadScenarios() {
 
 async function runScenario(scenarioId, algorithm = 'optimized') {
     try {
+        simulationEndDialogShown = false;
         const response = await fetch(`/run/${scenarioId}?algorithm=${algorithm}`, {
             method: 'POST'
         });
